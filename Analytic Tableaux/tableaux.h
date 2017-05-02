@@ -47,6 +47,11 @@ private:
 	bool _result;
 
 	bool prove(deque<SignedFormula> & deque = deque<SignedFormula>(), int tabs = 0) const;
+	bool atomRules(deque<SignedFormula> & deque, const SignedFormula & f, int tabs) const;
+	bool notRules(deque<SignedFormula> & deque, const SignedFormula & f, int tabs) const;
+	bool andRules(deque<SignedFormula> & deque, const SignedFormula & f, int tabs) const;
+	bool orRules(deque<SignedFormula> & deque, const SignedFormula & f, int tabs) const;
+	bool impRules(deque<SignedFormula> & deque, const SignedFormula & f, int tabs) const;
 };
 
 #endif // _TABLEAUX_H
