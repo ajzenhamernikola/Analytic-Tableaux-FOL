@@ -1,0 +1,39 @@
+PROPOSITIONAL CALCULUS SYNTAX
+=============================
+
+1) <symbol> is any identifier (as in programming language C) which starts with 
+small letter.
+
+2) <atomic_formula> is:
+    2a) true        -- keyword which reprezents "T", "1", etc.
+    2b) false       -- keyword which reprezents "N", "0", etc.
+    2c) <symbol>    -- logic variable
+
+3) <formula> is:
+    3a) <formula> <=> <formula>	    -- biconditional (if and only if)
+    3b) <formula> => <formula>      -- implication (implies, if...then)
+    3c) <formula> | <formula>       -- disjunction (or)
+    3d) <formula> & <formula>       -- conjunction (and, and then)
+    3e) ~<formula>                  -- negation (not, it is false that)
+    3f) <atomic_formula>            -- atomic formula (true, false or a logic 
+                                       variable (see 2))
+    3g) (<formula>)                 -- parentheses are permitted
+   
+4) <input> is:
+    <formula>;
+
+Therefore, a symbol ';' is used as a input terminator.
+
+ORDER OF PRECEDENCE
+===================
+
+Binary operators have lower precedence than unary operators. Among the binary
+operators, the order of precedence from the highest to the lowest is: 
+&, |, => and <=>.
+To change the order of precedence one can use the parentheses. They can also be
+used in the cases when they are not necessary. 
+
+ASSOCIATIVITY
+=============
+
+All binary operators are left-associative.

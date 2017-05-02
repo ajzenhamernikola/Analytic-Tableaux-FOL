@@ -108,6 +108,7 @@ public:
 
 	virtual void printFormula(ostream & ostr) const = 0;
 	virtual Type getType() const = 0;
+	virtual Formula releaseIff() = 0;
 
 	virtual ~BaseFormula() {}
 };
@@ -116,6 +117,10 @@ public:
 
 class AtomicFormula : public BaseFormula {
 public:
+	virtual Formula releaseIff()
+	{
+		return shared_from_this();
+	}
 };
 
 
@@ -222,6 +227,11 @@ public:
 		ostr << " = ";
 		_ops[1]->printTerm(ostr);
 	}
+
+	virtual Formula releaseIff()
+	{
+		throw new exception("Not applicable!");
+	}
 };
 
 class Disequality : public Atom {
@@ -249,6 +259,11 @@ public:
 		_ops[0]->printTerm(ostr);
 		ostr << " ~= ";
 		_ops[1]->printTerm(ostr);
+	}
+
+	virtual Formula releaseIff()
+	{
+		throw new exception("Not applicable!");
 	}
 };
 
@@ -292,6 +307,12 @@ public:
 	virtual Type getType() const
 	{
 		return T_NOT;
+	}
+
+	virtual Formula releaseIff()
+	{
+		Formula releasedIffOp = _op->releaseIff();
+		return make_shared<Not>(releasedIffOp);
 	}
 };
 
@@ -355,6 +376,13 @@ public:
 	{
 		return T_AND;
 	}
+
+	virtual Formula releaseIff()
+	{
+		Formula releasedIffOp1 = _op1->releaseIff();
+		Formula releasedIffOp2 = _op2->releaseIff();
+		return make_shared<And>(releasedIffOp1, releasedIffOp2);
+	}
 };
 
 class Or : public BinaryConjective {
@@ -394,6 +422,13 @@ public:
 	{
 		return T_OR;
 	}
+
+	virtual Formula releaseIff()
+	{
+		Formula releasedIffOp1 = _op1->releaseIff();
+		Formula releasedIffOp2 = _op2->releaseIff();
+		return make_shared<Or>(releasedIffOp1, releasedIffOp2);
+	}
 };
 
 
@@ -432,6 +467,13 @@ public:
 	{
 		return T_IMP;
 	}
+
+	virtual Formula releaseIff()
+	{
+		Formula releasedIffOp1 = _op1->releaseIff();
+		Formula releasedIffOp2 = _op2->releaseIff();
+		return make_shared<Imp>(releasedIffOp1, releasedIffOp2);
+	}
 };
 
 
@@ -467,6 +509,16 @@ public:
 	{
 		return T_IFF;
 	}
+
+	virtual Formula releaseIff()
+	{
+		Formula releasedIffOp1 = _op1->releaseIff();
+		Formula releasedIffOp2 = _op2->releaseIff();
+		return make_shared<And>(
+			make_shared<Imp>(releasedIffOp1, releasedIffOp2),
+			make_shared<Imp>(releasedIffOp2, releasedIffOp1)
+		);
+	}
 };
 
 
@@ -490,6 +542,10 @@ public:
 		return _op;
 	}
 
+	virtual Formula releaseIff()
+	{
+		throw new exception("Not applicable");
+	}
 };
 
 class Forall : public Quantifier {
