@@ -5,8 +5,8 @@ PROPOSITIONAL CALCULUS SYNTAX
 small letter.
 
 2) <atomic_formula> is:
-    2a) true        -- keyword which reprezents "T", "1", etc.
-    2b) false       -- keyword which reprezents "N", "0", etc.
+    2a) true        -- keyword which represents "T", "1", etc.
+    2b) false       -- keyword which represents "N", "0", etc.
     2c) <symbol>    -- logic variable
 
 3) <formula> is:
