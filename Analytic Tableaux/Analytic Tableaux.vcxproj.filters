@@ -50,5 +50,8 @@
     <ClCompile Include="tableaux.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="fol.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
