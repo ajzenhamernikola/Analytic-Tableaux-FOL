@@ -95,12 +95,11 @@ public:
 };
 
 class BaseFormula;
+
 typedef shared_ptr<BaseFormula> Formula;
 
 class BaseFormula : public enable_shared_from_this<BaseFormula> {
-
 public:
-
 	enum Type {
 		T_TRUE, T_FALSE, T_ATOM, T_NOT,
 		T_AND, T_OR, T_IMP, T_IFF, T_FORALL, T_EXISTS
@@ -109,11 +108,10 @@ public:
 	virtual void printFormula(ostream & ostr) const = 0;
 	virtual Type getType() const = 0;
 	virtual Formula releaseIff() = 0;
+	virtual Formula absorbConstants() = 0;
 
 	virtual ~BaseFormula() {}
 };
-
-
 
 class AtomicFormula : public BaseFormula {
 public:
@@ -121,16 +119,18 @@ public:
 	{
 		return shared_from_this();
 	}
-};
 
+	virtual Formula absorbConstants()
+	{
+		return shared_from_this();
+	}
+};
 
 class LogicConstant : public AtomicFormula {
 public:
 };
 
-
 class True : public LogicConstant {
-
 public:
 	virtual void printFormula(ostream & ostr) const
 	{
@@ -141,11 +141,16 @@ public:
 	{
 		return T_TRUE;
 	}
+
+	// it is possible to regard true as an abbreviation for the formula p \/ ~p
+	Formula transformToDisjunction() const 
+	{
+		Formula p = make_shared<Atom>("p");
+		return make_shared<Or>(p, make_shared<Not>(p));
+	}
 };
 
-
 class False : public LogicConstant {
-
 public:
 	virtual void printFormula(ostream & ostr) const
 	{
@@ -156,8 +161,14 @@ public:
 	{
 		return T_FALSE;
 	}
-};
 
+	// it is possible to regard false as an abbreviation for the formula p /\ ~p
+	Formula transformToConjunction() const
+	{
+		Formula p = make_shared<Atom>("p");
+		return make_shared<And>(p, make_shared<Not>(p));
+	}
+};
 
 class Atom : public AtomicFormula {
 protected:
@@ -267,7 +278,6 @@ public:
 	}
 };
 
-
 class UnaryConjective : public BaseFormula {
 protected:
 	Formula _op;
@@ -314,8 +324,25 @@ public:
 		Formula releasedIffOp = _op->releaseIff();
 		return make_shared<Not>(releasedIffOp);
 	}
-};
 
+	virtual Formula absorbConstants()
+	{
+		Formula absOp = _op->absorbConstants();
+
+		if (absOp->getType() == T_TRUE)
+		{
+			return make_shared<False>();
+		}
+		else if (absOp->getType() == T_FALSE)
+		{
+			return make_shared<True>();
+		}
+		else
+		{
+			return make_shared<Not>(absOp);
+		}
+	}
+};
 
 class BinaryConjective : public BaseFormula {
 protected:
@@ -336,7 +363,6 @@ public:
 		return _op2;
 	}
 };
-
 
 class And : public BinaryConjective {
 public:
@@ -382,6 +408,29 @@ public:
 		Formula releasedIffOp1 = _op1->releaseIff();
 		Formula releasedIffOp2 = _op2->releaseIff();
 		return make_shared<And>(releasedIffOp1, releasedIffOp2);
+	}
+
+	virtual Formula absorbConstants()
+	{
+		Formula absOp1 = _op1->absorbConstants();
+		Formula absOp2 = _op2->absorbConstants();
+
+		if (absOp1->getType() == T_FALSE || absOp2->getType() == T_FALSE)
+		{
+			return make_shared<False>();
+		}
+		else if (absOp1->getType() == T_TRUE)
+		{
+			return absOp2;
+		}
+		else if (absOp2->getType() == T_TRUE)
+		{
+			return absOp1;
+		}
+		else
+		{
+			return make_shared<And>(absOp1, absOp2);
+		}
 	}
 };
 
@@ -429,8 +478,30 @@ public:
 		Formula releasedIffOp2 = _op2->releaseIff();
 		return make_shared<Or>(releasedIffOp1, releasedIffOp2);
 	}
-};
 
+	virtual Formula absorbConstants()
+	{
+		Formula absOp1 = _op1->absorbConstants();
+		Formula absOp2 = _op2->absorbConstants();
+
+		if (absOp1->getType() == T_TRUE || absOp2->getType() == T_TRUE)
+		{
+			return make_shared<True>();
+		}
+		else if (absOp1->getType() == T_FALSE)
+		{
+			return absOp2;
+		}
+		else if (absOp2->getType() == T_FALSE)
+		{
+			return absOp1;
+		}
+		else
+		{
+			return make_shared<Or>(absOp1, absOp2);
+		}
+	}
+};
 
 class Imp : public BinaryConjective {
 public:
@@ -474,12 +545,36 @@ public:
 		Formula releasedIffOp2 = _op2->releaseIff();
 		return make_shared<Imp>(releasedIffOp1, releasedIffOp2);
 	}
+
+	virtual Formula absorbConstants()
+	{
+		Formula absOp1 = _op1->absorbConstants();
+		Formula absOp2 = _op2->absorbConstants();
+
+		if (absOp1->getType() == T_TRUE)
+		{
+			return absOp2;
+		}
+		else if (absOp2->getType() == T_TRUE)
+		{
+			return make_shared<True>();
+		}
+		else if (absOp1->getType() == T_FALSE)
+		{
+			return make_shared<True>();
+		}
+		else if (absOp2->getType() == T_FALSE)
+		{
+			return make_shared<Not>(absOp1);
+		}
+		else
+		{
+			return make_shared<Imp>(absOp1, absOp2);
+		}
+	}
 };
 
-
-
 class Iff : public BinaryConjective {
-
 public:
 	Iff(const Formula & op1, const Formula & op2)
 		:BinaryConjective(op1, op2)
@@ -487,7 +582,6 @@ public:
 
 	virtual void printFormula(ostream & ostr) const
 	{
-
 		Type op1_type = _op1->getType();
 		Type op2_type = _op2->getType();
 
@@ -502,7 +596,6 @@ public:
 
 		if (op2_type == T_IFF)
 			ostr << ")";
-
 	}
 
 	virtual Type getType() const
@@ -519,8 +612,38 @@ public:
 			make_shared<Imp>(releasedIffOp2, releasedIffOp1)
 		);
 	}
-};
 
+	virtual Formula absorbConstants()
+	{
+		Formula absOp1 = _op1->absorbConstants();
+		Formula absOp2 = _op2->absorbConstants();
+
+		if (absOp1->getType() == T_FALSE || absOp2->getType() == T_FALSE)
+		{
+			return make_shared<True>();
+		}
+		else if (absOp1->getType() == T_TRUE)
+		{
+			return absOp2;
+		}
+		else if (absOp2->getType() == T_TRUE)
+		{
+			return absOp1;
+		}
+		else if (absOp1->getType() == T_FALSE)
+		{
+			return make_shared<Not>(absOp2);
+		}
+		else if (absOp2->getType() == T_FALSE)
+		{
+			return make_shared<Not>(absOp1);
+		}
+		else
+		{
+			return make_shared<Iff>(absOp1, absOp2);
+		}
+	}
+};
 
 class Quantifier : public BaseFormula {
 protected:

@@ -33,7 +33,7 @@ ostream & operator<<(ostream & ostr, SignedFormula sf)
 
 Tableaux::Tableaux(const Formula & root)
 {
-	_root = make_shared<BaseSignedFormula>(root->releaseIff(), false);
+	_root = make_shared<BaseSignedFormula>(root->releaseIff()->absorbConstants(), false);
 	_result = prove();
 }
 
