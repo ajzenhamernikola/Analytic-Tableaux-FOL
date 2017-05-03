@@ -33,7 +33,28 @@ ostream & operator<<(ostream & ostr, SignedFormula sf)
 
 Tableaux::Tableaux(const Formula & root)
 {
-	_root = make_shared<BaseSignedFormula>(root->releaseIff()->absorbConstants(), false);
+	// The original formula should be transformed to match the correct input for tableaux
+	// If the formula is a logic constant true, then...
+	if (root->getType() == BaseFormula::T_TRUE)
+	{
+		// ... transform the formula into its equivalent form without logic constants
+		_root = ((True*)root.get())->transformToDisjunction();
+	}
+	// If the formula is a logic constant false, then...
+	else if (root->getType() == BaseFormula::T_FALSE)
+	{
+		// ... transform the formula into its equivalent form without logic constants
+		_root = ((False*)root.get())->transformToConjunction();
+	}
+	// Otherwise, ...
+	else
+	{
+		// First, eliminate all equivalents from the formula, and then eliminate all constants from the formula
+		_root = make_shared<BaseSignedFormula>(root->releaseIff()->absorbConstants(), false);
+	}
+
+	/* By here, the formula _root is equivalent to the beginning formula root, 
+	   so if the formula _root is unsatisfiable, then the formula root is unsatisfiable */
 	_result = prove();
 }
 
