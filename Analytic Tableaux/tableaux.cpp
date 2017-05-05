@@ -59,9 +59,9 @@ Tableaux::Tableaux(const Formula & root)
 	_result = prove();
 }
 
-bool Tableaux::getResult() const
+string Tableaux::getResult() const
 {
-	return _result;
+	return _result ? "TAUTOLOGY" : "NOT A TAUTOLOGY";
 }
 
 bool Tableaux::prove(deque<SignedFormula> & deque, int tabs) const
@@ -218,7 +218,7 @@ bool Tableaux::andRules(deque<SignedFormula> & deque, const SignedFormula & f, i
 		deque.pop_front();
 		deque.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand1(), false));
 		res1 = prove(deque, tabs + 1);
-		cout << string(tabs + 1, '\t') << " X (" << (res1 ? "true" : "false") << ")" << endl;
+		cout << string(tabs + 1, '\t') << (res1 ? "X" : "O") << endl;
 
 		deque = tmp;
 
@@ -229,7 +229,7 @@ bool Tableaux::andRules(deque<SignedFormula> & deque, const SignedFormula & f, i
 			deque.pop_front();
 			deque.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand2(), false));
 			res2 = prove(deque, tabs + 1);
-			cout << string(tabs + 1, '\t') << " X (" << (res2 ? "true" : "false") << ")" << endl;
+			cout << string(tabs + 1, '\t') << (res2 ? "X" : "O") << endl;
 
 			deque = tmp;
 
@@ -256,7 +256,7 @@ bool Tableaux::orRules(deque<SignedFormula> & deque, const SignedFormula & f, in
 		deque.pop_front();
 		deque.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand1(), true));
 		res1 = prove(deque, tabs + 1);
-		cout << string(tabs + 1, '\t') << " X (" << (res1 ? "true" : "false") << ")" << endl;
+		cout << string(tabs + 1, '\t') << (res1 ? "X" : "O") << endl;
 
 		deque = tmp;
 
@@ -267,7 +267,7 @@ bool Tableaux::orRules(deque<SignedFormula> & deque, const SignedFormula & f, in
 			deque.pop_front();
 			deque.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand2(), true));
 			res2 = prove(deque, tabs + 1);
-			cout << string(tabs + 1, '\t') << " X (" << (res2 ? "true" : "false") << ")" << endl;
+			cout << string(tabs + 1, '\t') << (res2 ? "X" : "O") << endl;
 
 			deque = tmp;
 
@@ -302,7 +302,7 @@ bool Tableaux::impRules(deque<SignedFormula> & deque, const SignedFormula & f, i
 		deque.pop_front();
 		deque.push_back(make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand1(), false));
 		res1 = prove(deque, tabs + 1);
-		cout << string(tabs + 1, '\t') << " X (" << (res1 ? "true" : "false") << ")" << endl;
+		cout << string(tabs + 1, '\t') << (res1 ? "X" : "O") << endl;
 
 		deque = tmp;
 

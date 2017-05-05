@@ -75,9 +75,9 @@ int main(int argc, char **argv)
 	if (parsed_formula.get() != 0)
 	{
 		Tableaux t(parsed_formula);
-		bool result = t.getResult();
+		string result = t.getResult();
 
-		cout << "Your formula is " << (result ? "SATISTIFABLE" : "UNSATISFIABLE") << endl;
+		cout << "Your formula is " << result << endl;
 	}
 
 	return 0;

@@ -37,7 +37,7 @@ class Tableaux
 public:
 	Tableaux(const Formula & root);
 
-	bool getResult() const;
+	string getResult() const;
 
 	~Tableaux()
 	{}
