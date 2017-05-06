@@ -54,8 +54,8 @@ Tableaux::Tableaux(const Formula & root)
 	// Otherwise, do nothing
 
 	_root = make_shared<BaseSignedFormula>(transformed, false);
-	/* By here, the formula _root is equivalent to the beginning formula root, 
-	   so if the formula _root is unsatisfiable, then the formula root is unsatisfiable */
+	/* By here, the formula _root is equivalent to the beginning formula root,
+	so if the formula _root is unsatisfiable, then the formula root is unsatisfiable */
 	_result = prove();
 }
 
@@ -64,7 +64,7 @@ string Tableaux::getResult() const
 	return _result ? "TAUTOLOGY" : "NOT A TAUTOLOGY";
 }
 
-bool Tableaux::prove(deque<SignedFormula> & deque, int tabs) const
+bool Tableaux::prove(deque<SignedFormula> && deque, int tabs) const
 {
 	if (!deque.empty())
 	{
@@ -91,34 +91,34 @@ bool Tableaux::prove(deque<SignedFormula> & deque, int tabs) const
 		{
 		case BaseFormula::T_TRUE:
 		case BaseFormula::T_FALSE:
-			throw new exception("Not applicable!");
+			throw "Not applicable!";
 			break;
 		case BaseFormula::T_ATOM:
-			return atomRules(deque, f, tabs);
+			return atomRules(move(deque), f, tabs);
 		case BaseFormula::T_NOT:
-			return notRules(deque, f, tabs);
+			return notRules(move(deque), f, tabs);
 		case BaseFormula::T_AND:
-			return andRules(deque, f, tabs);
+			return andRules(move(deque), f, tabs);
 		case BaseFormula::T_OR:
-			return orRules(deque, f, tabs);
+			return orRules(move(deque), f, tabs);
 		case BaseFormula::T_IMP:
-			return impRules(deque, f, tabs);
+			return impRules(move(deque), f, tabs);
 		case BaseFormula::T_IFF:
 		case BaseFormula::T_FORALL:
 		case BaseFormula::T_EXISTS:
 		default:
-			throw new exception("Not applicable!");
+			throw "Not applicable!";
 			break;
 		}
 	}
 	else
 	{
 		deque.push_back(_root);
-		return prove(deque, tabs);
+		return prove(move(deque), tabs);
 	}
 }
 
-bool Tableaux::atomRules(deque<SignedFormula> & deque, const SignedFormula & f, int tabs) const
+bool Tableaux::atomRules(deque<SignedFormula> && deque, const SignedFormula & f, int tabs) const
 {
 	// Check if there are only signed atoms in the current branch
 	bool onlyAtoms = true;
@@ -179,10 +179,10 @@ bool Tableaux::atomRules(deque<SignedFormula> & deque, const SignedFormula & f, 
 	so that other signed formulas can be checked */
 	deque.pop_front();
 	deque.push_back(f);
-	return prove(deque, tabs);
+	return prove(move(deque), tabs);
 }
 
-bool Tableaux::notRules(deque<SignedFormula>& deque, const SignedFormula & f, int tabs) const
+bool Tableaux::notRules(deque<SignedFormula>&& deque, const SignedFormula & f, int tabs) const
 {
 	// If !X is true, then X is false.
 	if (f->getSign())
@@ -195,10 +195,10 @@ bool Tableaux::notRules(deque<SignedFormula>& deque, const SignedFormula & f, in
 		deque.push_back(make_shared<BaseSignedFormula>(((Not*)f->getFormula().get())->getOperand(), true));
 	}
 	deque.pop_front();
-	return prove(deque, tabs);
+	return prove(move(deque), tabs);
 }
 
-bool Tableaux::andRules(deque<SignedFormula> & deque, const SignedFormula & f, int tabs) const
+bool Tableaux::andRules(deque<SignedFormula> && deque, const SignedFormula & f, int tabs) const
 {
 	// If X /\ Y is true, then X and Y are both true.
 	if (f->getSign())
@@ -206,7 +206,7 @@ bool Tableaux::andRules(deque<SignedFormula> & deque, const SignedFormula & f, i
 		deque.pop_front();
 		deque.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand1(), true));
 		deque.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand2(), true));
-		return prove(deque, tabs);
+		return prove(move(deque), tabs);
 	}
 	// If X /\ Y is false, then either X is false or Y is false.
 	else
@@ -217,7 +217,7 @@ bool Tableaux::andRules(deque<SignedFormula> & deque, const SignedFormula & f, i
 		// first, check what happens if X is false
 		deque.pop_front();
 		deque.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand1(), false));
-		res1 = prove(deque, tabs + 1);
+		res1 = prove(move(deque), tabs + 1);
 		cout << string(tabs + 1, '\t') << (res1 ? "X" : "O") << endl;
 
 		deque = tmp;
@@ -228,10 +228,10 @@ bool Tableaux::andRules(deque<SignedFormula> & deque, const SignedFormula & f, i
 			// ... check what happens if Y is false
 			deque.pop_front();
 			deque.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand2(), false));
-			res2 = prove(deque, tabs + 1);
+			res2 = prove(move(deque), tabs + 1);
 			cout << string(tabs + 1, '\t') << (res2 ? "X" : "O") << endl;
 
-			deque = tmp;
+			move(deque) = tmp;
 
 			// both branches have to be closed to close their superbranch
 			return res1 && res2;
@@ -244,7 +244,7 @@ bool Tableaux::andRules(deque<SignedFormula> & deque, const SignedFormula & f, i
 	}
 }
 
-bool Tableaux::orRules(deque<SignedFormula> & deque, const SignedFormula & f, int tabs) const
+bool Tableaux::orRules(deque<SignedFormula> && deque, const SignedFormula & f, int tabs) const
 {
 	// If X /\ Y is true, then either X is true or Y is true.
 	if (f->getSign())
@@ -255,7 +255,7 @@ bool Tableaux::orRules(deque<SignedFormula> & deque, const SignedFormula & f, in
 		// first, check if X is true
 		deque.pop_front();
 		deque.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand1(), true));
-		res1 = prove(deque, tabs + 1);
+		res1 = prove(move(deque), tabs + 1);
 		cout << string(tabs + 1, '\t') << (res1 ? "X" : "O") << endl;
 
 		deque = tmp;
@@ -266,7 +266,7 @@ bool Tableaux::orRules(deque<SignedFormula> & deque, const SignedFormula & f, in
 			// ... check what happens if Y is true
 			deque.pop_front();
 			deque.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand2(), true));
-			res2 = prove(deque, tabs + 1);
+			res2 = prove(move(deque), tabs + 1);
 			cout << string(tabs + 1, '\t') << (res2 ? "X" : "O") << endl;
 
 			deque = tmp;
@@ -286,11 +286,11 @@ bool Tableaux::orRules(deque<SignedFormula> & deque, const SignedFormula & f, in
 		deque.pop_front();
 		deque.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand1(), false));
 		deque.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand2(), false));
-		return prove(deque, tabs);
+		return prove(move(deque), tabs);
 	}
 }
 
-bool Tableaux::impRules(deque<SignedFormula> & deque, const SignedFormula & f, int tabs) const
+bool Tableaux::impRules(deque<SignedFormula> && deque, const SignedFormula & f, int tabs) const
 {
 	// If X => Y is true, then either X is false or Y is true.
 	if (f->getSign())
@@ -301,7 +301,7 @@ bool Tableaux::impRules(deque<SignedFormula> & deque, const SignedFormula & f, i
 		// first, check if X is false
 		deque.pop_front();
 		deque.push_back(make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand1(), false));
-		res1 = prove(deque, tabs + 1);
+		res1 = prove(move(deque), tabs + 1);
 		cout << string(tabs + 1, '\t') << (res1 ? "X" : "O") << endl;
 
 		deque = tmp;
@@ -312,7 +312,7 @@ bool Tableaux::impRules(deque<SignedFormula> & deque, const SignedFormula & f, i
 			// ... check what happens if Y is true
 			deque.pop_front();
 			deque.push_back(make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand2(), true));
-			res2 = prove(deque, tabs + 1);
+			res2 = prove(move(deque), tabs + 1);
 			cout << string(tabs + 1, '\t') << (res2 ? "X" : "O") << endl;
 
 			deque = tmp;
@@ -332,7 +332,7 @@ bool Tableaux::impRules(deque<SignedFormula> & deque, const SignedFormula & f, i
 		deque.pop_front();
 		deque.push_back(make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand1(), true));
 		deque.push_back(make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand2(), false));
-		return prove(deque, tabs);
+		return prove(move(deque), tabs);
 	}
 }
 

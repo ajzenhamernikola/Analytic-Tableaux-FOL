@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 		// Otherwise, show the help
 		{
 			ifstream infile;
-			string fileloc[] = { ".\\help.txt", "..\\Analytic Tableaux\\help.txt" };
+			string fileloc[] = { ".\\help.txt", "..\\Analytic Tableaux\\help.txt", "./help.txt" };
 			string line;
 
 			cout << "Welcome to Analytic Tableaux HELP!" << endl << endl;
