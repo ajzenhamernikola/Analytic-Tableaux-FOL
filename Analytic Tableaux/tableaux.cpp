@@ -313,7 +313,7 @@ bool Tableaux::impRules(deque<SignedFormula> & deque, const SignedFormula & f, i
 			deque.pop_front();
 			deque.push_back(make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand2(), true));
 			res2 = prove(deque, tabs + 1);
-			cout << string(tabs + 1, '\t') << " X (" << (res2 ? "true" : "false") << ")" << endl;
+			cout << string(tabs + 1, '\t') << (res2 ? "X" : "O") << endl;
 
 			deque = tmp;
 
