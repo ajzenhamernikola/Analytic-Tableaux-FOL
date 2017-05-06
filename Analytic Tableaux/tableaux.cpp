@@ -284,8 +284,8 @@ bool Tableaux::orRules(deque<SignedFormula> & deque, const SignedFormula & f, in
 	else
 	{
 		deque.pop_front();
-		deque.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand1(), false));
-		deque.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand2(), false));
+		deque.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand1(), false));
+		deque.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand2(), false));
 		return prove(deque, tabs);
 	}
 }
