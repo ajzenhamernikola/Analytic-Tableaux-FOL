@@ -82,6 +82,24 @@ ostream & operator<<(ostream & ostr, SignedFormula sf)
 	return ostr;
 }
 
+template<class T>
+ostream & operator<<(ostream & ostr, deque<T> & d_T)
+{
+	ostr << "{ ";
+	auto b = d_T.cbegin();
+	auto e = d_T.cend();
+	for (; b != e; b++)
+	{
+		ostr << *b;
+		if (b + 1 != e)
+		{
+			ostr << ", ";
+		}
+	}
+	ostr << " }";
+	return ostr;
+}
+
 // END BaseSignedFormula
 // ----------------------------------------------------------------------------
 
@@ -130,18 +148,7 @@ bool Tableaux::prove(deque<SignedFormula>&& d_formulae, deque<FunctionSymbol>&& 
 
 		// Writing the current state of tableaux to the standard output
 		cout << string(tabs, '\t');
-		cout << "{ ";
-		auto b = d_formulae.cbegin();
-		auto e = d_formulae.cend();
-		for (; b != e; b++)
-		{
-			cout << *b;
-			if (b + 1 != e)
-			{
-				cout << ", ";
-			}
-		}
-		cout << " }" << endl;
+		cout << d_formulae << ", " << d_constants << endl;
 
 		/* Depending on the type of formula, there are several sets of rules that can be applied */
 		switch (type)
@@ -156,11 +163,6 @@ bool Tableaux::prove(deque<SignedFormula>&& d_formulae, deque<FunctionSymbol>&& 
 			return orRules(move(d_formulae), move(d_constants), f, tabs);
 		case BaseFormula::T_IMP:
 			return impRules(move(d_formulae), move(d_constants), f, tabs);
-		//case BaseFormula::T_TRUE:
-		//case BaseFormula::T_FALSE:
-		//case BaseFormula::T_IFF:
-		//case BaseFormula::T_FORALL:
-		//case BaseFormula::T_EXISTS:
 		default:
 			throw "Not applicable!";
 			break;

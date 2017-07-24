@@ -57,4 +57,7 @@ public:
 
 ostream & operator << (ostream & ostr, SignedFormula sf);
 
+template<class T>
+ostream & operator << (ostream & ostr, deque<T> & d_T);
+
 #endif // _TABLEAUX_H
