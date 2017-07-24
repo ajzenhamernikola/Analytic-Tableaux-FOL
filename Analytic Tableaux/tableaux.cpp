@@ -21,6 +21,12 @@ void BaseSignedFormula::printSignedFormula(ostream & ostr) const
 
 BaseSignedFormula::TableauxType BaseSignedFormula::getType() const
 {
+	// We will refer to atoms as alpha-type formulae
+	if (_f->getType() == BaseFormula::T_ATOM)
+	{
+		return TT_ALPHA;
+	}
+
 	// Alpha-type formulae are...
 	if (
 		// T ~X
@@ -76,30 +82,6 @@ BaseSignedFormula::TableauxType BaseSignedFormula::getType() const
 	throw "Not applicable";
 }
 
-ostream & operator<<(ostream & ostr, SignedFormula sf)
-{
-	sf->printSignedFormula(ostr);
-	return ostr;
-}
-
-template<class T>
-ostream & operator<<(ostream & ostr, deque<T> & d_T)
-{
-	ostr << "{ ";
-	auto b = d_T.cbegin();
-	auto e = d_T.cend();
-	for (; b != e; b++)
-	{
-		ostr << *b;
-		if (b + 1 != e)
-		{
-			ostr << ", ";
-		}
-	}
-	ostr << " }";
-	return ostr;
-}
-
 // END BaseSignedFormula
 // ----------------------------------------------------------------------------
 
@@ -147,7 +129,49 @@ bool Tableaux::prove(deque<SignedFormula>&& d_formulae, deque<FunctionSymbol>&& 
 		cout << string(tabs, '\t');
 		cout << d_formulae << ", " << d_constants << endl;
 
+		SignedFormula rule;
+		BaseSignedFormula::TableauxType tType;
 
+		if (checkIfExistsComplementaryPairOfLiterals(d_formulae))
+		{
+			// close the branch
+			return true;
+		}
+		else if (checkIfExistsNonGammaRule(d_formulae, rule, tType))
+		{
+			if (tType == BaseSignedFormula::TT_ALPHA || tType == BaseSignedFormula::TT_BETA)
+			{
+				switch (rule->getFormula()->getType())
+				{
+				case BaseFormula::T_ATOM:
+					return atomRules(move(d_formulae), move(d_constants), rule, tabs);
+				case BaseFormula::T_NOT:
+					return notRules(move(d_formulae), move(d_constants), rule, tabs);
+				case BaseFormula::T_AND:
+					return andRules(move(d_formulae), move(d_constants), rule, tabs);
+				case BaseFormula::T_OR:
+					return orRules(move(d_formulae), move(d_constants), rule, tabs);
+				case BaseFormula::T_IMP:
+					return impRules(move(d_formulae), move(d_constants), rule, tabs);
+				default:
+					throw "Not applicable: Unknown formula type for signed formula type ALPHA";
+				}
+			}
+			else if (tType == BaseSignedFormula::TT_DELTA)
+			{
+				// TODO: finish this part of algorithm
+			}
+
+			throw "Not applicable: unknown type of signed formula";
+		}
+		else if (checkIfShouldBranchBeOpenForGammaRule(d_formulae))
+		{
+			// TODO: finish this part of algorithm
+		}
+		else
+		{
+			// TODO: finish this part of algorithm
+		}
 	}
 	else
 	{
@@ -162,6 +186,7 @@ bool Tableaux::checkIfExistsComplementaryPairOfLiterals(deque<SignedFormula>& d_
 	deque<SignedFormula>::const_iterator iter_outer = d_formulae.cbegin();
 	for (; iter_outer != d_formulae.cend(); ++iter_outer)
 	{
+		// If the formula is not an atom, we can skip the check
 		if ((*iter_outer)->getFormula()->getType() != BaseFormula::T_ATOM)
 		{
 			continue;
@@ -182,93 +207,51 @@ bool Tableaux::checkIfExistsComplementaryPairOfLiterals(deque<SignedFormula>& d_
 	return false;
 }
 
-bool Tableaux::checkIfExistsNonGammaRule(deque<SignedFormula>& d_formulae) const
+bool Tableaux::checkIfExistsNonGammaRule(deque<SignedFormula>& d_formulae, SignedFormula & rule, BaseSignedFormula::TableauxType & ruleType) const
 {
+	deque<SignedFormula>::const_iterator iter = d_formulae.cbegin();
+	for (; iter != d_formulae.cend(); ++iter)
+	{
+		BaseSignedFormula::TableauxType tType = (*iter)->getType();
+		if (tType == BaseSignedFormula::TT_ALPHA || tType == BaseSignedFormula::TT_BETA || tType == BaseSignedFormula::TT_DELTA)
+		{
+			rule = *iter;
+			ruleType = tType;
+			return true;
+		}
+	}
+
 	return false;
 }
 
 bool Tableaux::checkIfShouldBranchBeOpenForGammaRule(deque<SignedFormula>& d_formulae) const
 {
+	// TODO: finish this part of algorithm
 	return false;
 }
 
 bool Tableaux::atomRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const
 {
-	// Check if there are only signed atoms in the current branch
-	bool onlyAtoms = true;
-	for (SignedFormula & sf : d_formulae)
+	deque<SignedFormula>::const_iterator iter = find(d_formulae.cbegin(), d_formulae.cend(), f);
+	if (iter != d_formulae.cend())
 	{
-		if (sf->getFormula()->getType() != BaseFormula::T_ATOM)
-		{
-			onlyAtoms = false;
-			break;
-		}
+		d_formulae.erase(iter);
 	}
-	// If there are only signed atoms, then...
-	if (onlyAtoms)
-	{
-		SignedFormula tmp_f(f);
-		std::deque<SignedFormula> tmp(d_formulae);
-
-		// ... for each signed atom, check...
-		do
-		{
-			// ... if there is his complementary signed atom in the same branch, then close the current branch
-			for (SignedFormula & sf : tmp)
-			{
-				if (((Atom*)sf->getFormula().get())->getSymbol() == ((Atom*)tmp_f->getFormula().get())->getSymbol() &&
-					sf->getSign() != tmp_f->getSign())
-				{
-					return true;
-				}
-			}
-
-			//// For debugging: write the contents of temporary queue to the standard output
-			//cout << string(tabs + 1, '\t');
-			//std::for_each(tmp.cbegin(), tmp.cend(), [&cout = cout](SignedFormula x) { cout << x << " "; });
-			//cout << endl;
-
-			tmp_f = tmp.front();
-			tmp.pop_front();
-		} while (!tmp.empty());
-
-		// If there are no complementary signed atoms, then the branch cannot be closed
-		return false;
-	}
-	// If there is at least one signed formula other than a signed atom, then...
-	else
-	{
-		// If there are T P and F P signed formulas, where P is an atom, then close the current branch
-		for (SignedFormula & sf : d_formulae)
-		{
-			if (sf->getFormula()->getType() == BaseFormula::T_ATOM &&
-				((Atom*)sf->getFormula().get())->getSymbol() == ((Atom*)f->getFormula().get())->getSymbol() &&
-				sf->getSign() != f->getSign())
-			{
-				return true;
-			}
-		}
-	}
-	/* Otherwise, place the signed atom at the end of the queue,
-	so that other signed formulas can be checked */
-	d_formulae.pop_front();
 	d_formulae.push_back(f);
 	return prove(move(d_formulae), move(d_constants), tabs);
 }
 
 bool Tableaux::notRules(deque<SignedFormula>&& d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const
 {
-	// If !X is true, then X is false.
-	if (f->getSign())
+	Not * pRule = (Not *)f.get();
+	d_formulae.push_back(make_shared<BaseSignedFormula>(pRule->getOperand(), !f->getSign()));
+
+	deque<SignedFormula>::const_iterator iter = find(d_formulae.cbegin(), d_formulae.cend(), f);
+	if (iter != d_formulae.cend())
 	{
-		d_formulae.push_back(make_shared<BaseSignedFormula>(((Not*)f->getFormula().get())->getOperand(), false));
+		d_formulae.erase(iter);
 	}
-	// If !X is false, then X is true.
-	else
-	{
-		d_formulae.push_back(make_shared<BaseSignedFormula>(((Not*)f->getFormula().get())->getOperand(), true));
-	}
-	d_formulae.pop_front();
+
 	return prove(move(d_formulae), move(d_constants), tabs);
 }
 
@@ -277,7 +260,11 @@ bool Tableaux::andRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol
 	// If X /\ Y is true, then X and Y are both true.
 	if (f->getSign())
 	{
-		d_formulae.pop_front();
+		deque<SignedFormula>::const_iterator iter = find(d_formulae.cbegin(), d_formulae.cend(), f);
+		if (iter != d_formulae.cend())
+		{
+			d_formulae.erase(iter);
+		}
 		d_formulae.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand1(), true));
 		d_formulae.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand2(), true));
 		return prove(move(d_formulae), move(d_constants), tabs);
@@ -289,7 +276,11 @@ bool Tableaux::andRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol
 		std::deque<SignedFormula> tmp(d_formulae);
 
 		// first, check what happens if X is false
-		d_formulae.pop_front();
+		deque<SignedFormula>::const_iterator iter = find(d_formulae.cbegin(), d_formulae.cend(), f);
+		if (iter != d_formulae.cend())
+		{
+			d_formulae.erase(iter);
+		}
 		d_formulae.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand1(), false));
 		res1 = prove(move(d_formulae), move(d_constants), tabs + 1);
 		cout << string(tabs + 1, '\t') << (res1 ? "X" : "O") << endl;
@@ -300,7 +291,11 @@ bool Tableaux::andRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol
 		if (res1)
 		{
 			// ... check what happens if Y is false
-			d_formulae.pop_front();
+			deque<SignedFormula>::const_iterator iter = find(d_formulae.cbegin(), d_formulae.cend(), f);
+			if (iter != d_formulae.cend())
+			{
+				d_formulae.erase(iter);
+			}
 			d_formulae.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand2(), false));
 			res2 = prove(move(d_formulae), move(d_constants), tabs + 1);
 			cout << string(tabs + 1, '\t') << (res2 ? "X" : "O") << endl;
@@ -327,7 +322,11 @@ bool Tableaux::orRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol>
 		std::deque<SignedFormula> tmp(d_formulae);
 
 		// first, check if X is true
-		d_formulae.pop_front();
+		deque<SignedFormula>::const_iterator iter = find(d_formulae.cbegin(), d_formulae.cend(), f);
+		if (iter != d_formulae.cend())
+		{
+			d_formulae.erase(iter);
+		}
 		d_formulae.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand1(), true));
 		res1 = prove(move(d_formulae), move(d_constants), tabs + 1);
 		cout << string(tabs + 1, '\t') << (res1 ? "X" : "O") << endl;
@@ -338,7 +337,11 @@ bool Tableaux::orRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol>
 		if (res1)
 		{
 			// ... check what happens if Y is true
-			d_formulae.pop_front();
+			deque<SignedFormula>::const_iterator iter = find(d_formulae.cbegin(), d_formulae.cend(), f);
+			if (iter != d_formulae.cend())
+			{
+				d_formulae.erase(iter);
+			}
 			d_formulae.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand2(), true));
 			res2 = prove(move(d_formulae), move(d_constants), tabs + 1);
 			cout << string(tabs + 1, '\t') << (res2 ? "X" : "O") << endl;
@@ -357,7 +360,11 @@ bool Tableaux::orRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol>
 	// If X \/ Y is false, then X and Y are both false.
 	else
 	{
-		d_formulae.pop_front();
+		deque<SignedFormula>::const_iterator iter = find(d_formulae.cbegin(), d_formulae.cend(), f);
+		if (iter != d_formulae.cend())
+		{
+			d_formulae.erase(iter);
+		}
 		d_formulae.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand1(), false));
 		d_formulae.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand2(), false));
 		return prove(move(d_formulae), move(d_constants), tabs);
@@ -373,7 +380,11 @@ bool Tableaux::impRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol
 		std::deque<SignedFormula> tmp(d_formulae);
 
 		// first, check if X is false
-		d_formulae.pop_front();
+		deque<SignedFormula>::const_iterator iter = find(d_formulae.cbegin(), d_formulae.cend(), f);
+		if (iter != d_formulae.cend())
+		{
+			d_formulae.erase(iter);
+		}
 		d_formulae.push_back(make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand1(), false));
 		res1 = prove(move(d_formulae), move(d_constants), tabs + 1);
 		cout << string(tabs + 1, '\t') << (res1 ? "X" : "O") << endl;
@@ -384,7 +395,11 @@ bool Tableaux::impRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol
 		if (res1)
 		{
 			// ... check what happens if Y is true
-			d_formulae.pop_front();
+			deque<SignedFormula>::const_iterator iter = find(d_formulae.cbegin(), d_formulae.cend(), f);
+			if (iter != d_formulae.cend())
+			{
+				d_formulae.erase(iter);
+			}
 			d_formulae.push_back(make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand2(), true));
 			res2 = prove(move(d_formulae), move(d_constants), tabs + 1);
 			cout << string(tabs + 1, '\t') << (res2 ? "X" : "O") << endl;
@@ -403,7 +418,11 @@ bool Tableaux::impRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol
 	// If X => Y is false, then X is true and Y is false.
 	else
 	{
-		d_formulae.pop_front();
+		deque<SignedFormula>::const_iterator iter = find(d_formulae.cbegin(), d_formulae.cend(), f);
+		if (iter != d_formulae.cend())
+		{
+			d_formulae.erase(iter);
+		}
 		d_formulae.push_back(make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand1(), true));
 		d_formulae.push_back(make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand2(), false));
 		return prove(move(d_formulae), move(d_constants), tabs);
@@ -412,3 +431,27 @@ bool Tableaux::impRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol
 
 // END Tableaux
 // ----------------------------------------------------------------------------
+
+ostream & operator<<(ostream & ostr, SignedFormula sf)
+{
+	sf->printSignedFormula(ostr);
+	return ostr;
+}
+
+template<class T>
+ostream & operator<<(ostream & ostr, deque<T> & d_T)
+{
+	ostr << "{ ";
+	auto b = d_T.cbegin();
+	auto e = d_T.cend();
+	for (; b != e; b++)
+	{
+		ostr << *b;
+		if (b + 1 != e)
+		{
+			ostr << ", ";
+		}
+	}
+	ostr << " }";
+	return ostr;
+}
