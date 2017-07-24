@@ -24,6 +24,7 @@ public:
 	virtual Type getType() const = 0;
 	virtual void printTerm(ostream & ostr) const = 0;
 	virtual void getConstants(deque<FunctionSymbol> & d_constants) const = 0;
+	virtual bool equalTo(const Term & t) const = 0;
 
 	virtual ~BaseTerm() {}
 };
@@ -39,6 +40,7 @@ public:
 	const Variable & getVariable() const;
 	virtual void printTerm(ostream & ostr) const;
 	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
+	virtual bool equalTo(const Term & t) const;
 };
 
 class FunctionTerm : public BaseTerm
@@ -55,6 +57,7 @@ public:
 	const vector<Term> & getOperands() const;
 	virtual void printTerm(ostream & ostr) const;
 	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
+	virtual bool equalTo(const Term & t) const;
 };
 
 class BaseFormula;
@@ -74,6 +77,7 @@ public:
 	virtual Formula releaseIff() = 0;
 	virtual Formula absorbConstants() = 0;
 	virtual void getConstants(deque<FunctionSymbol> & d_constants) const = 0;
+	virtual bool equalTo(const Formula & f) const = 0;
 
 	virtual ~BaseFormula() {}
 };
@@ -89,6 +93,7 @@ class LogicConstant : public AtomicFormula
 {
 public:
 	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
+	virtual bool equalTo(const Formula & f) const;
 };
 
 class True : public LogicConstant
@@ -122,6 +127,7 @@ public:
 	virtual void printFormula(ostream & ostr) const;
 	virtual Type getType() const;
 	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
+	virtual bool equalTo(const Formula & f) const;
 };
 
 class Equality : public Atom
@@ -212,6 +218,7 @@ public:
 	virtual Type getType() const;
 	virtual Formula releaseIff();
 	virtual Formula absorbConstants();
+	virtual bool equalTo(const Formula & f) const;
 };
 
 class BinaryConjective : public BaseFormula
@@ -236,6 +243,7 @@ public:
 	virtual Type getType() const;
 	virtual Formula releaseIff();
 	virtual Formula absorbConstants();
+	virtual bool equalTo(const Formula & f) const;
 };
 
 class Or : public BinaryConjective
@@ -247,6 +255,7 @@ public:
 	virtual Type getType() const;
 	virtual Formula releaseIff();
 	virtual Formula absorbConstants();
+	virtual bool equalTo(const Formula & f) const;
 };
 
 class Imp : public BinaryConjective
@@ -258,6 +267,7 @@ public:
 	virtual Type getType() const;
 	virtual Formula releaseIff();
 	virtual Formula absorbConstants();
+	virtual bool equalTo(const Formula & f) const;
 };
 
 class Iff : public BinaryConjective
@@ -269,6 +279,7 @@ public:
 	virtual Type getType() const;
 	virtual Formula releaseIff();
 	virtual Formula absorbConstants();
+	virtual bool equalTo(const Formula & f) const;
 };
 
 class Quantifier : public BaseFormula
@@ -293,6 +304,7 @@ public:
 
 	virtual Type getType() const;
 	virtual void printFormula(ostream & ostr) const;
+	virtual bool equalTo(const Formula & f) const;
 };
 
 class Exists : public Quantifier
@@ -302,6 +314,7 @@ public:
 
 	virtual Type getType() const;
 	virtual void printFormula(ostream & ostr) const;
+	virtual bool equalTo(const Formula & f) const;
 };
 
 ostream & operator << (ostream & ostr, const Term & t);

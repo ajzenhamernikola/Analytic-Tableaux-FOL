@@ -28,6 +28,21 @@ void VariableTerm::getConstants(deque<FunctionSymbol> & d_constants) const
 	(void)d_constants;
 }
 
+bool VariableTerm::equalTo(const Term & t) const
+{
+	if (t->getType() != BaseTerm::TT_VARIABLE)
+	{
+		return false;
+	}
+
+	if (((VariableTerm*)t.get())->getVariable() != _v)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 // END VariableTerm
 // ----------------------------------------------------------------------------
 
@@ -89,6 +104,30 @@ void FunctionTerm::getConstants(deque<FunctionSymbol> & d_constants) const
 	}
 }
 
+bool FunctionTerm::equalTo(const Term & t) const
+{
+	if (t->getType() != BaseTerm::TT_FUNCTION)
+	{
+		return false;
+	}
+
+	FunctionTerm * ft = (FunctionTerm*)t.get();
+	if (ft->getOperands().size() != _ops.size())
+	{
+		return false;
+	}
+
+	for (unsigned i = 0; i < _ops.size(); ++i)
+	{
+		if (!_ops[i]->equalTo(ft->getOperands()[i]))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 // END FunctionTerm
 // ----------------------------------------------------------------------------
 
@@ -114,6 +153,16 @@ Formula AtomicFormula::absorbConstants()
 void LogicConstant::getConstants(deque<FunctionSymbol> & d_constants) const
 {
 	(void)d_constants;
+}
+
+bool LogicConstant::equalTo(const Formula & f) const
+{
+	if (f->getType() != getType())
+	{
+		return false;
+	}
+
+	return true;
 }
 
 // END LogicConstant
@@ -212,6 +261,30 @@ void Atom::getConstants(deque<FunctionSymbol> & d_constants) const
 	}
 }
 
+bool Atom::equalTo(const Formula & f) const
+{
+	if (f->getType() != BaseFormula::T_ATOM)
+	{
+		return false;
+	}
+
+	Atom * fa = (Atom*)f.get();
+	if (fa->getOperands().size() != _ops.size())
+	{
+		return false;
+	}
+
+	for (unsigned i = 0; i < _ops.size(); ++i)
+	{
+		if (!_ops[i]->equalTo(fa->getOperands()[i]))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 // END Atom
 // ----------------------------------------------------------------------------
 
@@ -285,6 +358,22 @@ Formula Not::absorbConstants()
 	{
 		return make_shared<Not>(absOp);
 	}
+}
+
+bool Not::equalTo(const Formula & f) const
+{
+	if (f->getType() != BaseFormula::T_NOT)
+	{
+		return false;
+	}
+
+	Not* fn = (Not*)f.get();
+	if (!fn->getOperand()->equalTo(_op))
+	{
+		return false;
+	}
+
+	return true;
 }
 
 // END Not
@@ -387,6 +476,26 @@ Formula And::absorbConstants()
 	}
 }
 
+bool And::equalTo(const Formula & f) const
+{
+	if (f->getType() != BaseFormula::T_AND)
+	{
+		return false;
+	}
+
+	And* fa = (And*)f.get();
+	if (!fa->getOperand1()->equalTo(_op1))
+	{
+		return false;
+	}
+	if (!fa->getOperand2()->equalTo(_op2))
+	{
+		return false;
+	}
+
+	return true;
+}
+
 // END And
 // ----------------------------------------------------------------------------
 
@@ -456,6 +565,26 @@ Formula Or::absorbConstants()
 	{
 		return make_shared<Or>(absOp1, absOp2);
 	}
+}
+
+bool Or::equalTo(const Formula & f) const
+{
+	if (f->getType() != BaseFormula::T_OR)
+	{
+		return false;
+	}
+
+	Or* fo = (Or*)f.get();
+	if (!fo->getOperand1()->equalTo(_op1))
+	{
+		return false;
+	}
+	if (!fo->getOperand2()->equalTo(_op2))
+	{
+		return false;
+	}
+
+	return true;
 }
 
 // END Or
@@ -529,6 +658,26 @@ Formula Imp::absorbConstants()
 	{
 		return make_shared<Imp>(absOp1, absOp2);
 	}
+}
+
+bool Imp::equalTo(const Formula & f) const
+{
+	if (f->getType() != BaseFormula::T_IMP)
+	{
+		return false;
+	}
+
+	Imp* fi = (Imp*)f.get();
+	if (!fi->getOperand1()->equalTo(_op1))
+	{
+		return false;
+	}
+	if (!fi->getOperand2()->equalTo(_op2))
+	{
+		return false;
+	}
+
+	return true;
 }
 
 // END Imp
@@ -605,6 +754,26 @@ Formula Iff::absorbConstants()
 	}
 }
 
+bool Iff::equalTo(const Formula & f) const
+{
+	if (f->getType() != BaseFormula::T_IFF)
+	{
+		return false;
+	}
+
+	Iff* fi = (Iff*)f.get();
+	if (!fi->getOperand1()->equalTo(_op1))
+	{
+		return false;
+	}
+	if (!fi->getOperand2()->equalTo(_op2))
+	{
+		return false;
+	}
+
+	return true;
+}
+
 // END Iff
 // ----------------------------------------------------------------------------
 
@@ -673,6 +842,26 @@ void Forall::printFormula(ostream & ostr) const
 		ostr << ")";
 }
 
+bool Forall::equalTo(const Formula & f) const
+{
+	if (f->getType() != BaseFormula::T_FORALL)
+	{
+		return false;
+	}
+
+	Forall *ff = (Forall *)f.get();
+	if (ff->getVariable() != _v)
+	{
+		return false;
+	}
+	if (!ff->getOperand()->equalTo(_op))
+	{
+		return false;
+	}
+
+	return true;
+}
+
 // END Forall
 // ----------------------------------------------------------------------------
 
@@ -703,6 +892,26 @@ void Exists::printFormula(ostream & ostr) const
 	if (op_type == T_AND || op_type == T_OR ||
 		op_type == T_IMP || op_type == T_IFF)
 		ostr << ")";
+}
+
+bool Exists::equalTo(const Formula & f) const
+{
+	if (f->getType() != BaseFormula::T_FORALL)
+	{
+		return false;
+	}
+
+	Exists *fe = (Exists *)f.get();
+	if (fe->getVariable() != _v)
+	{
+		return false;
+	}
+	if (!fe->getOperand()->equalTo(_op))
+	{
+		return false;
+	}
+
+	return true;
 }
 
 // END Exists
