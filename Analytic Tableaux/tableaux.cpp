@@ -143,30 +143,11 @@ bool Tableaux::prove(deque<SignedFormula>&& d_formulae, deque<FunctionSymbol>&& 
 {
 	if (!d_formulae.empty())
 	{
-		SignedFormula f = d_formulae.front();
-		BaseFormula::Type type = f->getFormula()->getType();
-
 		// Writing the current state of tableaux to the standard output
 		cout << string(tabs, '\t');
 		cout << d_formulae << ", " << d_constants << endl;
 
-		/* Depending on the type of formula, there are several sets of rules that can be applied */
-		switch (type)
-		{
-		case BaseFormula::T_ATOM:
-			return atomRules(move(d_formulae), move(d_constants), f, tabs);
-		case BaseFormula::T_NOT:
-			return notRules(move(d_formulae), move(d_constants), f, tabs);
-		case BaseFormula::T_AND:
-			return andRules(move(d_formulae), move(d_constants), f, tabs);
-		case BaseFormula::T_OR:
-			return orRules(move(d_formulae), move(d_constants), f, tabs);
-		case BaseFormula::T_IMP:
-			return impRules(move(d_formulae), move(d_constants), f, tabs);
-		default:
-			throw "Not applicable!";
-			break;
-		}
+
 	}
 	else
 	{
@@ -174,6 +155,41 @@ bool Tableaux::prove(deque<SignedFormula>&& d_formulae, deque<FunctionSymbol>&& 
 		_root->getFormula()->getConstants(d_constants);
 		return prove(move(d_formulae), move(d_constants), tabs);
 	}
+}
+
+bool Tableaux::checkIfExistsComplementaryPairOfLiterals(deque<SignedFormula>& d_formulae) const
+{
+	deque<SignedFormula>::const_iterator iter_outer = d_formulae.cbegin();
+	for (; iter_outer != d_formulae.cend(); ++iter_outer)
+	{
+		if ((*iter_outer)->getFormula()->getType() != BaseFormula::T_ATOM)
+		{
+			continue;
+		}
+
+		deque<SignedFormula>::const_iterator iter_inner = iter_outer + 1;
+		for (; iter_inner != d_formulae.cend(); ++iter_inner)
+		{
+			// Complementary pair of literals are TX and FX, where X is a literal
+			if ((*iter_outer)->getSign() != (*iter_inner)->getSign() &&
+				(*iter_outer)->getFormula()->equalTo((*iter_inner)->getFormula()))
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+bool Tableaux::checkIfExistsNonGammaRule(deque<SignedFormula>& d_formulae) const
+{
+	return false;
+}
+
+bool Tableaux::checkIfShouldBranchBeOpenForGammaRule(deque<SignedFormula>& d_formulae) const
+{
+	return false;
 }
 
 bool Tableaux::atomRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const
