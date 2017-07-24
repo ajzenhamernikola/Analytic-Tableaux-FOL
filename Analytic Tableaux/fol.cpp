@@ -72,10 +72,14 @@ void FunctionTerm::printTerm(ostream & ostr) const
 
 void FunctionTerm::getConstants(deque<FunctionSymbol> & d_constants) const
 {
-	if (_ops.size() == 0)
+	// If the FunctionTerm is a constant, and there is no such constant symbol in the deque ...
+	deque<FunctionSymbol>::const_iterator iter = find(d_constants.cbegin(), d_constants.cend(), _f);
+	if (_ops.size() == 0 && iter != d_constants.cend())
 	{
+		// ... then add the symbol in the deque
 		d_constants.push_back(_f);
 	}
+	// Otherwise, go through the arguments and add constants found in them in the deque
 	else
 	{
 		for (unsigned i = 0; i < _ops.size(); ++i)
@@ -717,4 +721,24 @@ ostream & operator << (ostream & ostr, const Formula & f)
 {
 	f->printFormula(ostr);
 	return ostr;
+}
+
+FunctionSymbol getUniqueConstantSymbol(deque<FunctionSymbol> & d_constants)
+{
+	static unsigned i = 0;
+	FunctionSymbol unique_constant = "uc" + to_string(i);
+
+	deque<FunctionSymbol>::const_iterator b = d_constants.cbegin();
+	deque<FunctionSymbol>::const_iterator e = d_constants.cend();
+
+	for (; b != e; ++b)
+	{
+		if (*b == unique_constant)
+		{
+			++i;
+			unique_constant = "uc" + to_string(i);
+		}
+	}
+
+	return unique_constant;
 }
