@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <functional>
+#include <deque>
 
 using namespace std;
 
@@ -22,6 +23,8 @@ public:
 	enum Type { TT_VARIABLE, TT_FUNCTION };
 	virtual Type getType() const = 0;
 	virtual void printTerm(ostream & ostr) const = 0;
+	virtual void getConstants(deque<FunctionSymbol> & d_constants) const = 0;
+
 	virtual ~BaseTerm() {}
 };
 
@@ -35,6 +38,7 @@ public:
 	virtual Type getType() const;
 	const Variable & getVariable() const;
 	virtual void printTerm(ostream & ostr) const;
+	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
 };
 
 class FunctionTerm : public BaseTerm
@@ -50,6 +54,7 @@ public:
 	const FunctionSymbol & getSymbol() const;
 	const vector<Term> & getOperands() const;
 	virtual void printTerm(ostream & ostr) const;
+	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
 };
 
 class BaseFormula;
@@ -68,6 +73,7 @@ public:
 	virtual Type getType() const = 0;
 	virtual Formula releaseIff() = 0;
 	virtual Formula absorbConstants() = 0;
+	virtual void getConstants(deque<FunctionSymbol> & d_constants) const = 0;
 
 	virtual ~BaseFormula() {}
 };
@@ -82,6 +88,7 @@ public:
 class LogicConstant : public AtomicFormula
 {
 public:
+	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
 };
 
 class True : public LogicConstant
@@ -114,6 +121,7 @@ public:
 
 	virtual void printFormula(ostream & ostr) const;
 	virtual Type getType() const;
+	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
 };
 
 class Equality : public Atom
@@ -191,6 +199,8 @@ public:
 	UnaryConjective(const Formula & op);
 
 	const Formula & getOperand() const;
+
+	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
 };
 
 class Not : public UnaryConjective
@@ -213,6 +223,8 @@ public:
 
 	const Formula & getOperand1() const;
 	const Formula & getOperand2() const;
+
+	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
 };
 
 class And : public BinaryConjective
@@ -271,6 +283,7 @@ public:
 	const Formula & getOperand() const;
 	virtual Formula releaseIff();
 	virtual Formula absorbConstants();
+	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
 };
 
 class Forall : public Quantifier

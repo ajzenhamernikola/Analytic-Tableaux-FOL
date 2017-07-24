@@ -23,6 +23,11 @@ void VariableTerm::printTerm(ostream & ostr) const
 	ostr << _v;
 }
 
+void VariableTerm::getConstants(deque<FunctionSymbol> & d_constants) const
+{
+	(void)d_constants;
+}
+
 // END VariableTerm
 // ----------------------------------------------------------------------------
 
@@ -65,6 +70,21 @@ void FunctionTerm::printTerm(ostream & ostr) const
 	}
 }
 
+void FunctionTerm::getConstants(deque<FunctionSymbol> & d_constants) const
+{
+	if (_ops.size() == 0)
+	{
+		d_constants.push_back(_f);
+	}
+	else
+	{
+		for (unsigned i = 0; i < _ops.size(); ++i)
+		{
+			_ops[i]->getConstants(d_constants);
+		}
+	}
+}
+
 // END FunctionTerm
 // ----------------------------------------------------------------------------
 
@@ -86,6 +106,11 @@ Formula AtomicFormula::absorbConstants()
 
 // ----------------------------------------------------------------------------
 // LogicConstant
+
+void LogicConstant::getConstants(deque<FunctionSymbol> & d_constants) const
+{
+	(void)d_constants;
+}
 
 // END LogicConstant
 // ----------------------------------------------------------------------------
@@ -175,6 +200,14 @@ BaseFormula::Type Atom::getType() const
 	return T_ATOM;
 }
 
+void Atom::getConstants(deque<FunctionSymbol> & d_constants) const
+{
+	for (unsigned i = 0; i < _ops.size(); ++i)
+	{
+		_ops[i]->getConstants(d_constants);
+	}
+}
+
 // END Atom
 // ----------------------------------------------------------------------------
 
@@ -188,6 +221,11 @@ UnaryConjective::UnaryConjective(const Formula & op)
 const Formula & UnaryConjective::getOperand() const
 {
 	return _op;
+}
+
+void UnaryConjective::getConstants(deque<FunctionSymbol> & d_constants) const
+{
+	_op->getConstants(d_constants);
 }
 
 // END UnaryConjective
@@ -264,6 +302,12 @@ const Formula & BinaryConjective::getOperand1() const
 const Formula & BinaryConjective::getOperand2() const
 {
 	return _op2;
+}
+
+void BinaryConjective::getConstants(deque<FunctionSymbol> & d_constants) const
+{
+	_op1->getConstants(d_constants);
+	_op2->getConstants(d_constants);
 }
 
 // END BinaryConjective
@@ -586,6 +630,11 @@ Formula Quantifier::releaseIff()
 Formula Quantifier::absorbConstants()
 {
 	throw new exception("Not applicable");
+}
+
+void Quantifier::getConstants(deque<FunctionSymbol> & d_constants) const
+{
+	_op->getConstants(d_constants);
 }
 
 // END Quantifier
