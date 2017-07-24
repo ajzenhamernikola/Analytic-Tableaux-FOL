@@ -169,7 +169,7 @@ bool Tableaux::prove(deque<SignedFormula>&& d_formulae, deque<FunctionSymbol>&& 
 	else
 	{
 		d_formulae.push_back(_root);
-		deque<FunctionSymbol> d_constantsInRoot;
+		_root->getFormula()->getConstants(d_constants);
 		return prove(move(d_formulae), move(d_constants), tabs);
 	}
 }
