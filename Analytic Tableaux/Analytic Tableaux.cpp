@@ -66,7 +66,7 @@ int main(int argc, char **argv)
 	}
 
 	cout << "Welcome to Analytic Tableaux!" << endl;
-	cout << "Please type in a proposition calculus formula to generate its tableaux." << endl;
+	cout << "Please type in a first-order logic formula to generate its tableaux." << endl;
 	cout << "If you need help, run this program again with option --help." << endl << endl;
 
 	yyparse();
