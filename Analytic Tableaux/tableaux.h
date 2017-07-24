@@ -43,7 +43,7 @@ private:
 	bool prove(deque<SignedFormula> && d_formulae = deque<SignedFormula>(), deque<FunctionSymbol> && d_constants = deque<FunctionSymbol>(), int tabs = 0) const;
 	
 	bool checkIfExistsComplementaryPairOfLiterals(deque<SignedFormula> & d_formulae) const;
-	bool checkIfExistsNonGammaRule(deque<SignedFormula> & d_formulae) const;
+	bool checkIfExistsNonGammaRule(deque<SignedFormula> & d_formulae, SignedFormula & rule, BaseSignedFormula::TableauxType & ruleType) const;
 	bool checkIfShouldBranchBeOpenForGammaRule(deque<SignedFormula> & d_formulae) const;
 
 	bool atomRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const;
