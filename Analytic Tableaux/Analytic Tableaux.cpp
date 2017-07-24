@@ -80,5 +80,7 @@ int main(int argc, char **argv)
 		cout << "Your formula is " << result << endl;
 	}
 
+	getc(stdin);
+
 	return 0;
 }

@@ -2,6 +2,73 @@
 #include "fol.hpp"
 
 // ----------------------------------------------------------------------------
+// VariableTerm
+
+VariableTerm::VariableTerm(const Variable & v)
+	:_v(v)
+{}
+
+BaseTerm::Type VariableTerm::getType() const
+{
+	return TT_VARIABLE;
+}
+
+const Variable & VariableTerm::getVariable() const
+{
+	return _v;
+}
+
+void VariableTerm::printTerm(ostream & ostr) const
+{
+	ostr << _v;
+}
+
+// END VariableTerm
+// ----------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------
+// FunctionTerm
+
+FunctionTerm::FunctionTerm(const FunctionSymbol & f, const vector<Term> & ops)
+	:_f(f),
+	_ops(ops)
+{}
+
+BaseTerm::Type FunctionTerm::getType() const
+{
+	return TT_FUNCTION;
+}
+
+const FunctionSymbol & FunctionTerm::getSymbol() const
+{
+	return _f;
+}
+
+const vector<Term> & FunctionTerm::getOperands() const
+{
+	return _ops;
+}
+
+void FunctionTerm::printTerm(ostream & ostr) const
+{
+	ostr << _f;
+
+	for (unsigned i = 0; i < _ops.size(); i++)
+	{
+		if (i == 0)
+			ostr << "(";
+		_ops[i]->printTerm(ostr);
+		if (i != _ops.size() - 1)
+			ostr << ",";
+		else
+			ostr << ")";
+	}
+}
+
+// END FunctionTerm
+// ----------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------
 // AtomicFormula
 
 Formula AtomicFormula::releaseIff()
@@ -492,3 +559,113 @@ Formula Iff::absorbConstants()
 
 // END Iff
 // ----------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------
+// Quantifier
+
+Quantifier::Quantifier(const Variable & v, const Formula & op)
+	:_v(v),
+	_op(op)
+{}
+
+const Variable & Quantifier::getVariable() const
+{
+	return _v;
+}
+
+const Formula & Quantifier::getOperand() const
+{
+	return _op;
+}
+
+Formula Quantifier::releaseIff()
+{
+	throw new exception("Not applicable");
+}
+
+Formula Quantifier::absorbConstants()
+{
+	throw new exception("Not applicable");
+}
+
+// END Quantifier
+// ----------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------
+// Forall
+
+Forall::Forall(const Variable & v, const Formula & op)
+	:Quantifier(v, op)
+{}
+
+BaseFormula::Type Forall::getType() const
+{
+	return T_FORALL;
+}
+
+void Forall::printFormula(ostream & ostr) const
+{
+	cout << "![" << _v << "] : ";
+
+	Type op_type = _op->getType();
+
+	if (op_type == T_AND || op_type == T_OR ||
+		op_type == T_IMP || op_type == T_IFF)
+		ostr << "(";
+
+	_op->printFormula(ostr);
+
+	if (op_type == T_AND || op_type == T_OR ||
+		op_type == T_IMP || op_type == T_IFF)
+		ostr << ")";
+}
+
+// END Forall
+// ----------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------
+// Exists
+
+Exists::Exists(const Variable & v, const Formula & op)
+	:Quantifier(v, op)
+{}
+
+BaseFormula::Type Exists::getType() const
+{
+	return T_EXISTS;
+}
+
+void Exists::printFormula(ostream & ostr) const
+{
+	cout << "?[" << _v << "] : ";
+
+	Type op_type = _op->getType();
+
+	if (op_type == T_AND || op_type == T_OR ||
+		op_type == T_IMP || op_type == T_IFF)
+		ostr << "(";
+
+	_op->printFormula(ostr);
+
+	if (op_type == T_AND || op_type == T_OR ||
+		op_type == T_IMP || op_type == T_IFF)
+		ostr << ")";
+}
+
+// END Exists
+// ----------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------
+// Other functions
+
+ostream & operator << (ostream & ostr, const Term & t)
+{
+	t->printTerm(ostr);
+	return ostr;
+}
+
+ostream & operator << (ostream & ostr, const Formula & f)
+{
+	f->printFormula(ostr);
+	return ostr;
+}

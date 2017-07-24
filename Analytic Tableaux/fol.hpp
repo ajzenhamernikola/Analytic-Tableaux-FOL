@@ -13,13 +13,11 @@ typedef string FunctionSymbol;
 typedef string PredicateSymbol;
 typedef string Variable;
 
-
 class BaseTerm;
 typedef shared_ptr<BaseTerm> Term;
 
-
-class BaseTerm : public enable_shared_from_this<BaseTerm> {
-
+class BaseTerm : public enable_shared_from_this<BaseTerm>
+{
 public:
 	enum Type { TT_VARIABLE, TT_FUNCTION };
 	virtual Type getType() const = 0;
@@ -27,78 +25,39 @@ public:
 	virtual ~BaseTerm() {}
 };
 
-class VariableTerm : public BaseTerm {
+class VariableTerm : public BaseTerm
+{
 private:
 	Variable _v;
 public:
-	VariableTerm(const Variable & v)
-		:_v(v)
-	{}
+	VariableTerm(const Variable & v);
 
-	virtual Type getType() const
-	{
-		return TT_VARIABLE;
-	}
-
-	const Variable & getVariable() const
-	{
-		return _v;
-	}
-	virtual void printTerm(ostream & ostr) const
-	{
-		ostr << _v;
-	}
+	virtual Type getType() const;
+	const Variable & getVariable() const;
+	virtual void printTerm(ostream & ostr) const;
 };
 
-class FunctionTerm : public BaseTerm {
+class FunctionTerm : public BaseTerm
+{
 private:
 	FunctionSymbol _f;
 	vector<Term> _ops;
-
 public:
 	FunctionTerm(const FunctionSymbol & f,
-		const vector<Term> & ops = vector<Term>())
-		:_f(f),
-		_ops(ops)
-	{}
+		const vector<Term> & ops = vector<Term>());
 
-	virtual Type getType() const
-	{
-		return TT_FUNCTION;
-	}
-
-	const FunctionSymbol & getSymbol() const
-	{
-		return _f;
-	}
-
-	const vector<Term> & getOperands() const
-	{
-		return _ops;
-	}
-
-	virtual void printTerm(ostream & ostr) const
-	{
-		ostr << _f;
-
-		for (unsigned i = 0; i < _ops.size(); i++)
-		{
-			if (i == 0)
-				ostr << "(";
-			_ops[i]->printTerm(ostr);
-			if (i != _ops.size() - 1)
-				ostr << ",";
-			else
-				ostr << ")";
-		}
-	}
+	virtual Type getType() const;
+	const FunctionSymbol & getSymbol() const;
+	const vector<Term> & getOperands() const;
+	virtual void printTerm(ostream & ostr) const;
 };
 
 class BaseFormula;
 
 typedef shared_ptr<BaseFormula> Formula;
 
-class BaseFormula : public enable_shared_from_this<BaseFormula> {
+class BaseFormula : public enable_shared_from_this<BaseFormula>
+{
 public:
 	enum Type {
 		T_TRUE, T_FALSE, T_ATOM, T_NOT,
@@ -113,35 +72,39 @@ public:
 	virtual ~BaseFormula() {}
 };
 
-class AtomicFormula : public BaseFormula {
+class AtomicFormula : public BaseFormula
+{
 public:
 	virtual Formula releaseIff();
 	virtual Formula absorbConstants();
 };
 
-class LogicConstant : public AtomicFormula {
+class LogicConstant : public AtomicFormula
+{
 public:
 };
 
-class True : public LogicConstant {
+class True : public LogicConstant
+{
 public:
 	virtual void printFormula(ostream & ostr) const;
 	virtual Type getType() const;
 	Formula transformToDisjunction() const;
 };
 
-class False : public LogicConstant {
+class False : public LogicConstant
+{
 public:
 	virtual void printFormula(ostream & ostr) const;
 	virtual Type getType() const;
 	Formula transformToConjunction() const;
 };
 
-class Atom : public AtomicFormula {
+class Atom : public AtomicFormula
+{
 protected:
 	PredicateSymbol _p;
 	vector<Term> _ops;
-
 public:
 	Atom(const PredicateSymbol & p,
 		const vector<Term> & ops = vector<Term>());
@@ -153,7 +116,8 @@ public:
 	virtual Type getType() const;
 };
 
-class Equality : public Atom {
+class Equality : public Atom
+{
 public:
 	Equality(const Term & lop, const Term & rop)
 		:Atom("=", vector<Term>())
@@ -185,7 +149,8 @@ public:
 	}
 };
 
-class Disequality : public Atom {
+class Disequality : public Atom
+{
 public:
 	Disequality(const Term & lop, const Term & rop)
 		:Atom("~=", vector<Term>())
@@ -218,7 +183,8 @@ public:
 	}
 };
 
-class UnaryConjective : public BaseFormula {
+class UnaryConjective : public BaseFormula
+{
 protected:
 	Formula _op;
 public:
@@ -227,7 +193,8 @@ public:
 	const Formula & getOperand() const;
 };
 
-class Not : public UnaryConjective {
+class Not : public UnaryConjective
+{
 public:
 	Not(const Formula & op);
 
@@ -237,7 +204,8 @@ public:
 	virtual Formula absorbConstants();
 };
 
-class BinaryConjective : public BaseFormula {
+class BinaryConjective : public BaseFormula
+{
 protected:
 	Formula _op1, _op2;
 public:
@@ -247,7 +215,8 @@ public:
 	const Formula & getOperand2() const;
 };
 
-class And : public BinaryConjective {
+class And : public BinaryConjective
+{
 public:
 	And(const Formula & op1, const Formula & op2);
 
@@ -257,7 +226,8 @@ public:
 	virtual Formula absorbConstants();
 };
 
-class Or : public BinaryConjective {
+class Or : public BinaryConjective
+{
 public:
 	Or(const Formula & op1, const Formula & op2);
 
@@ -267,7 +237,8 @@ public:
 	virtual Formula absorbConstants();
 };
 
-class Imp : public BinaryConjective {
+class Imp : public BinaryConjective
+{
 public:
 	Imp(const Formula & op1, const Formula & op2);
 
@@ -277,7 +248,8 @@ public:
 	virtual Formula absorbConstants();
 };
 
-class Iff : public BinaryConjective {
+class Iff : public BinaryConjective
+{
 public:
 	Iff(const Formula & op1, const Formula & op2);
 
@@ -287,106 +259,40 @@ public:
 	virtual Formula absorbConstants();
 };
 
-class Quantifier : public BaseFormula {
+class Quantifier : public BaseFormula
+{
 protected:
 	Variable _v;
 	Formula  _op;
 public:
-	Quantifier(const Variable & v, const Formula & op)
-		:_v(v),
-		_op(op)
-	{}
+	Quantifier(const Variable & v, const Formula & op);
 
-	const Variable & getVariable() const
-	{
-		return _v;
-	}
-
-	const Formula & getOperand() const
-	{
-		return _op;
-	}
-
-	virtual Formula releaseIff()
-	{
-		throw new exception("Not applicable");
-	}
-
-	virtual Formula absorbConstants()
-	{
-		throw new exception("Not applicable");
-	}
+	const Variable & getVariable() const;
+	const Formula & getOperand() const;
+	virtual Formula releaseIff();
+	virtual Formula absorbConstants();
 };
 
-class Forall : public Quantifier {
-public:
-	Forall(const Variable & v, const Formula & op)
-		:Quantifier(v, op)
-	{}
-
-	virtual Type getType() const
-	{
-		return T_FORALL;
-	}
-	virtual void printFormula(ostream & ostr) const
-	{
-		cout << "![" << _v << "] : ";
-
-		Type op_type = _op->getType();
-
-		if (op_type == T_AND || op_type == T_OR ||
-			op_type == T_IMP || op_type == T_IFF)
-			ostr << "(";
-
-		_op->printFormula(ostr);
-
-		if (op_type == T_AND || op_type == T_OR ||
-			op_type == T_IMP || op_type == T_IFF)
-			ostr << ")";
-	}
-};
-
-class Exists : public Quantifier {
-public:
-	Exists(const Variable & v, const Formula & op)
-		:Quantifier(v, op)
-	{}
-
-	virtual Type getType() const
-	{
-		return T_EXISTS;
-	}
-
-	virtual void printFormula(ostream & ostr) const
-	{
-		cout << "?[" << _v << "] : ";
-
-		Type op_type = _op->getType();
-
-		if (op_type == T_AND || op_type == T_OR ||
-			op_type == T_IMP || op_type == T_IFF)
-			ostr << "(";
-
-		_op->printFormula(ostr);
-
-		if (op_type == T_AND || op_type == T_OR ||
-			op_type == T_IMP || op_type == T_IFF)
-			ostr << ")";
-	}
-};
-
-inline
-ostream & operator << (ostream & ostr, const Term & t)
+class Forall : public Quantifier
 {
-	t->printTerm(ostr);
-}
+public:
+	Forall(const Variable & v, const Formula & op);
 
-inline
-ostream & operator << (ostream & ostr, const Formula & f)
+	virtual Type getType() const;
+	virtual void printFormula(ostream & ostr) const;
+};
+
+class Exists : public Quantifier
 {
-	f->printFormula(ostr);
-	return ostr;
-}
+public:
+	Exists(const Variable & v, const Formula & op);
+
+	virtual Type getType() const;
+	virtual void printFormula(ostream & ostr) const;
+};
+
+ostream & operator << (ostream & ostr, const Term & t);
+ostream & operator << (ostream & ostr, const Formula & f);
 
 extern Formula parsed_formula;
 
