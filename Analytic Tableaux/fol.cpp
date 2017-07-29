@@ -795,16 +795,6 @@ const Formula & Quantifier::getOperand() const
 	return _op;
 }
 
-Formula Quantifier::releaseIff()
-{
-	throw new exception("Not applicable");
-}
-
-Formula Quantifier::absorbConstants()
-{
-	throw new exception("Not applicable");
-}
-
 void Quantifier::getConstants(deque<FunctionSymbol> & d_constants) const
 {
 	_op->getConstants(d_constants);
@@ -862,6 +852,31 @@ bool Forall::equalTo(const Formula & f) const
 	return true;
 }
 
+Formula Forall::releaseIff()
+{
+	Formula releasedIffOp = _op->releaseIff();
+	
+	return make_shared<Forall>(_v, releasedIffOp);
+}
+
+Formula Forall::absorbConstants()
+{
+	Formula absOp = _op->absorbConstants();
+	
+	if (absOp->getType() == BaseFormula::T_TRUE)
+	{
+		return make_shared<True>();
+	}
+	else if (absOp->getType() == BaseFormula::T_FALSE)
+	{
+		return make_shared<False>();
+	}
+	else
+	{
+		return make_shared<Exists>(_v, absOp);
+	}
+}
+
 // END Forall
 // ----------------------------------------------------------------------------
 
@@ -912,6 +927,31 @@ bool Exists::equalTo(const Formula & f) const
 	}
 
 	return true;
+}
+
+Formula Exists::releaseIff()
+{
+	Formula releasedIffOp = _op->releaseIff();
+	
+	return make_shared<Exists>(_v, releasedIffOp);
+}
+
+Formula Exists::absorbConstants()
+{
+	Formula absOp = _op->absorbConstants();
+	
+	if (absOp->getType() == BaseFormula::T_TRUE)
+	{
+		return make_shared<True>();
+	}
+	else if (absOp->getType() == BaseFormula::T_FALSE)
+	{
+		return make_shared<False>();
+	}
+	else
+	{
+		return make_shared<Exists>(_v, absOp);
+	}
 }
 
 // END Exists

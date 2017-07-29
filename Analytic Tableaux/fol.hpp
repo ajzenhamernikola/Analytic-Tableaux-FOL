@@ -305,6 +305,8 @@ public:
 	virtual Type getType() const;
 	virtual void printFormula(ostream & ostr) const;
 	virtual bool equalTo(const Formula & f) const;
+	virtual Formula releaseIff();
+	virtual Formula absorbConstants();
 };
 
 class Exists : public Quantifier
@@ -315,6 +317,8 @@ public:
 	virtual Type getType() const;
 	virtual void printFormula(ostream & ostr) const;
 	virtual bool equalTo(const Formula & f) const;
+	virtual Formula releaseIff();
+	virtual Formula absorbConstants();
 };
 
 ostream & operator << (ostream & ostr, const Term & t);
