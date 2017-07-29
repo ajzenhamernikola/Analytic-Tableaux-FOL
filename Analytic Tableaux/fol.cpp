@@ -43,6 +43,18 @@ bool VariableTerm::equalTo(const Term & t) const
 	return true;
 }
 
+Term VariableTerm::instantiate(const Variable & v, const Term & t)
+{
+	if (v == _v)
+	{
+		return t;
+	}
+	else
+	{
+		return shared_from_this();
+	}
+}
+
 // END VariableTerm
 // ----------------------------------------------------------------------------
 
@@ -128,6 +140,17 @@ bool FunctionTerm::equalTo(const Term & t) const
 	return true;
 }
 
+Term FunctionTerm::instantiate(const Variable & v, const Term & t)
+{
+	vector<Term> instOps;
+	for (unsigned i = 0; i < _ops.size(); ++i)
+	{
+		instOps.push_back(_ops[i]->instantiate(v, t));
+	}
+	
+	return make_shared<FunctionTerm>(_f, instOps);
+}
+
 // END FunctionTerm
 // ----------------------------------------------------------------------------
 
@@ -163,6 +186,13 @@ bool LogicConstant::equalTo(const Formula & f) const
 	}
 
 	return true;
+}
+
+Formula LogicConstant::instantiate(const Variable & v, const Term & t)
+{
+	(void)v;
+	(void)t;
+	return shared_from_this();
 }
 
 // END LogicConstant
@@ -285,6 +315,17 @@ bool Atom::equalTo(const Formula & f) const
 	return true;
 }
 
+Formula Atom::instantiate(const Variable & v, const Term & t)
+{
+	vector<Term> instOps;
+	for (unsigned i = 0; i < _ops.size(); ++i)
+	{
+		instOps.push_back(_ops[i]->instantiate(v, t));
+	}
+	
+	return make_shared<Atom>(_p, instOps);
+}
+
 // END Atom
 // ----------------------------------------------------------------------------
 
@@ -374,6 +415,11 @@ bool Not::equalTo(const Formula & f) const
 	}
 
 	return true;
+}
+
+Formula Not::instantiate(const Variable & v, const Term & t)
+{
+	return make_shared<Not>(_op->instantiate(v, t));
 }
 
 // END Not
@@ -496,6 +542,11 @@ bool And::equalTo(const Formula & f) const
 	return true;
 }
 
+Formula And::instantiate(const Variable & v, const Term & t)
+{
+	return make_shared<And>(_op1->instantiate(v, t), _op2->instantiate(v, t));
+}
+
 // END And
 // ----------------------------------------------------------------------------
 
@@ -585,6 +636,11 @@ bool Or::equalTo(const Formula & f) const
 	}
 
 	return true;
+}
+
+Formula And::instantiate(const Variable & v, const Term & t)
+{
+	return make_shared<Or>(_op1->instantiate(v, t), _op2->instantiate(v, t));
 }
 
 // END Or
@@ -680,6 +736,11 @@ bool Imp::equalTo(const Formula & f) const
 	return true;
 }
 
+Formula Imp::instantiate(const Variable & v, const Term & t)
+{
+	return make_shared<Imp>(_op1->instantiate(v, t), _op2->instantiate(v, t));
+}
+
 // END Imp
 // ----------------------------------------------------------------------------
 
@@ -772,6 +833,11 @@ bool Iff::equalTo(const Formula & f) const
 	}
 
 	return true;
+}
+
+Formula Iff::instantiate(const Variable & v, const Term & t)
+{
+	return make_shared<Iff>(_op1->instantiate(v, t), _op2->instantiate(v, t));
 }
 
 // END Iff
@@ -877,6 +943,18 @@ Formula Forall::absorbConstants()
 	}
 }
 
+Formula Forall::instantiate(const Variable & v, const Term & t)
+{
+	if (_v == v)
+	{
+		return _op->instantiate();
+	}
+	else
+	{
+		return make_shared<Forall>(_v, _op->instantiate(v, t));
+	}
+}
+
 // END Forall
 // ----------------------------------------------------------------------------
 
@@ -951,6 +1029,18 @@ Formula Exists::absorbConstants()
 	else
 	{
 		return make_shared<Exists>(_v, absOp);
+	}
+}
+
+Formula Forall::instantiate(const Variable & v, const Term & t)
+{
+	if (_v == v)
+	{
+		return _op->instantiate();
+	}
+	else
+	{
+		return make_shared<Exists>(_v, _op->instantiate(v, t));
 	}
 }
 

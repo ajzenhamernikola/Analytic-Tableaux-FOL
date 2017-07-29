@@ -25,6 +25,7 @@ public:
 	virtual void printTerm(ostream & ostr) const = 0;
 	virtual void getConstants(deque<FunctionSymbol> & d_constants) const = 0;
 	virtual bool equalTo(const Term & t) const = 0;
+	virtual Term instantiate(const Variable & v, const Term & t) = 0;
 
 	virtual ~BaseTerm() {}
 };
@@ -41,6 +42,7 @@ public:
 	virtual void printTerm(ostream & ostr) const;
 	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
 	virtual bool equalTo(const Term & t) const;
+	virtual Term instantiate(const Variable & v, const Term & t);
 };
 
 class FunctionTerm : public BaseTerm
@@ -58,6 +60,7 @@ public:
 	virtual void printTerm(ostream & ostr) const;
 	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
 	virtual bool equalTo(const Term & t) const;
+	virtual Term instantiate(const Variable & v, const Term & t);
 };
 
 class BaseFormula;
@@ -78,6 +81,7 @@ public:
 	virtual Formula absorbConstants() = 0;
 	virtual void getConstants(deque<FunctionSymbol> & d_constants) const = 0;
 	virtual bool equalTo(const Formula & f) const = 0;
+	virtual Formula instantiate(const Variable & v, const Term & t) = 0;
 
 	virtual ~BaseFormula() {}
 };
@@ -94,6 +98,7 @@ class LogicConstant : public AtomicFormula
 public:
 	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
 	virtual bool equalTo(const Formula & f) const;
+	virtual Formula instantiate(const Variable & v, const Term & t);
 };
 
 class True : public LogicConstant
@@ -128,6 +133,7 @@ public:
 	virtual Type getType() const;
 	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
 	virtual bool equalTo(const Formula & f) const;
+	virtual Formula instantiate(const Variable & v, const Term & t);
 };
 
 class Equality : public Atom
@@ -159,7 +165,17 @@ public:
 
 	virtual Formula releaseIff()
 	{
-		throw new exception("Not applicable!");
+		throw "Not applicable!";
+	}
+	
+	virtual Formula absorbConstants()
+	{
+		throw "Not applicable!";
+	}
+	
+	virtual Formula instantiate(const Variable & v, const Term & t)
+	{
+		throw "Not applicable!";
 	}
 };
 
@@ -193,7 +209,17 @@ public:
 
 	virtual Formula releaseIff()
 	{
-		throw new exception("Not applicable!");
+		throw "Not applicable!";
+	}
+	
+	virtual Formula absorbConstants()
+	{
+		throw "Not applicable!";
+	}
+	
+	virtual Formula instantiate(const Variable & v, const Term & t)
+	{
+		throw "Not applicable!";
 	}
 };
 
@@ -219,6 +245,7 @@ public:
 	virtual Formula releaseIff();
 	virtual Formula absorbConstants();
 	virtual bool equalTo(const Formula & f) const;
+	virtual Formula instantiate(const Variable & v, const Term & t);
 };
 
 class BinaryConjective : public BaseFormula
@@ -244,6 +271,7 @@ public:
 	virtual Formula releaseIff();
 	virtual Formula absorbConstants();
 	virtual bool equalTo(const Formula & f) const;
+	virtual Formula instantiate(const Variable & v, const Term & t);
 };
 
 class Or : public BinaryConjective
@@ -256,6 +284,7 @@ public:
 	virtual Formula releaseIff();
 	virtual Formula absorbConstants();
 	virtual bool equalTo(const Formula & f) const;
+	virtual Formula instantiate(const Variable & v, const Term & t);
 };
 
 class Imp : public BinaryConjective
@@ -268,6 +297,7 @@ public:
 	virtual Formula releaseIff();
 	virtual Formula absorbConstants();
 	virtual bool equalTo(const Formula & f) const;
+	virtual Formula instantiate(const Variable & v, const Term & t);
 };
 
 class Iff : public BinaryConjective
@@ -280,6 +310,7 @@ public:
 	virtual Formula releaseIff();
 	virtual Formula absorbConstants();
 	virtual bool equalTo(const Formula & f) const;
+	virtual Formula instantiate(const Variable & v, const Term & t);
 };
 
 class Quantifier : public BaseFormula
@@ -307,6 +338,7 @@ public:
 	virtual bool equalTo(const Formula & f) const;
 	virtual Formula releaseIff();
 	virtual Formula absorbConstants();
+	virtual Formula instantiate(const Variable & v, const Term & t);
 };
 
 class Exists : public Quantifier
@@ -319,6 +351,7 @@ public:
 	virtual bool equalTo(const Formula & f) const;
 	virtual Formula releaseIff();
 	virtual Formula absorbConstants();
+	virtual Formula instantiate(const Variable & v, const Term & t);
 };
 
 ostream & operator << (ostream & ostr, const Term & t);
