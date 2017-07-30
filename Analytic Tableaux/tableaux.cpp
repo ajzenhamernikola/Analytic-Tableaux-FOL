@@ -275,7 +275,7 @@ bool Tableaux::checkIfShouldBranchBeOpenForGammaRule(deque<SignedFormula>& d_for
 	}
 		
 	// Complete filling the next node deque by instantiating gamma formulae
-	iterFormulae != d_gammaFormulae.cbegin();
+	iterFormulae = d_gammaFormulae.cbegin();
 	for (; iterFormulae != d_gammaFormulae.cend(); ++iterFormulae)
 	{
 		deque<FunctionSymbol>::const_iterator iterConstants = d_constants.cbegin();
