@@ -323,8 +323,6 @@ public:
 
 	const Variable & getVariable() const;
 	const Formula & getOperand() const;
-	virtual Formula releaseIff();
-	virtual Formula absorbConstants();
 	virtual void getConstants(deque<FunctionSymbol> & d_constants) const;
 };
 

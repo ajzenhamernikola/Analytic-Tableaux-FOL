@@ -638,7 +638,7 @@ bool Or::equalTo(const Formula & f) const
 	return true;
 }
 
-Formula And::instantiate(const Variable & v, const Term & t)
+Formula Or::instantiate(const Variable & v, const Term & t)
 {
 	return make_shared<Or>(_op1->instantiate(v, t), _op2->instantiate(v, t));
 }
@@ -947,7 +947,7 @@ Formula Forall::instantiate(const Variable & v, const Term & t)
 {
 	if (_v == v)
 	{
-		return _op->instantiate();
+		return _op->instantiate(v, t);
 	}
 	else
 	{
@@ -1032,11 +1032,11 @@ Formula Exists::absorbConstants()
 	}
 }
 
-Formula Forall::instantiate(const Variable & v, const Term & t)
+Formula Exists::instantiate(const Variable & v, const Term & t)
 {
 	if (_v == v)
 	{
-		return _op->instantiate();
+		return _op->instantiate(v, t);
 	}
 	else
 	{

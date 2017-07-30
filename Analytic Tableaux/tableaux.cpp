@@ -194,7 +194,7 @@ bool Tableaux::prove(deque<SignedFormula>&& d_formulae, deque<FunctionSymbol>&& 
 		}
 		else
 		{
-			bool isOpenedBranch = checkIfShouldBranchBeOpenForGammaRule(d_formulae);
+			bool isOpenedBranch = checkIfShouldBranchBeOpenForGammaRule(d_formulae, d_constants);
 			if (isOpenedBranch)
 			{
 				// mark the branch as open 
@@ -286,7 +286,7 @@ bool Tableaux::checkIfShouldBranchBeOpenForGammaRule(deque<SignedFormula>& d_for
 			Quantifier * pQuantFormula = (Quantifier *)((*iterFormulae)->getFormula().get());
 			v = pQuantFormula->getVariable();
 			
-			Formula instFormula = (*iterFormulae)->getFormula()->instantiate(v, *iterConstants);
+			Formula instFormula = (*iterFormulae)->getFormula()->instantiate(v, make_shared<FunctionTerm>(*iterConstants));
 			SignedFormula instSignedFormula = make_shared<BaseSignedFormula>(instFormula, (*iterFormulae)->getSign());
 			
 			deque<SignedFormula>::const_iterator iterFindFormulaeInner = find(d_nextFormulaeNode.cbegin(), d_nextFormulaeNode.cend(), instSignedFormula);
@@ -517,13 +517,13 @@ bool Tableaux::impRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol
 	}
 }
 
-bool forallRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const
+bool Tableaux::forallRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const
 {
 	// TODO: implement method
 	return false;
 }
 
-bool existsRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const
+bool Tableaux::existsRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const
 {
 	// TODO: implement method
 	return false;
