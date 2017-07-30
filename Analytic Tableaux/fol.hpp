@@ -355,8 +355,6 @@ public:
 ostream & operator << (ostream & ostr, const Term & t);
 ostream & operator << (ostream & ostr, const Formula & f);
 
-FunctionSymbol getUniqueConstantSymbol(deque<FunctionSymbol> & d_constants);
-
 extern Formula parsed_formula;
 
 #endif // _FOL_H

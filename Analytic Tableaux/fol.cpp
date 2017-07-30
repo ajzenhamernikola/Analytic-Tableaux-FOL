@@ -101,7 +101,7 @@ void FunctionTerm::getConstants(deque<FunctionSymbol> & d_constants) const
 {
 	// If the FunctionTerm is a constant, and there is no such constant symbol in the deque ...
 	deque<FunctionSymbol>::const_iterator iter = find(d_constants.cbegin(), d_constants.cend(), _f);
-	if (_ops.size() == 0 && iter != d_constants.cend())
+	if (_ops.size() == 0 && iter == d_constants.cend())
 	{
 		// ... then add the symbol in the deque
 		d_constants.push_back(_f);
@@ -124,6 +124,12 @@ bool FunctionTerm::equalTo(const Term & t) const
 	}
 
 	FunctionTerm * ft = (FunctionTerm*)t.get();
+
+	if (ft->getSymbol() != _f)
+	{
+		return false;
+	}
+
 	if (ft->getOperands().size() != _ops.size())
 	{
 		return false;
@@ -989,7 +995,7 @@ void Exists::printFormula(ostream & ostr) const
 
 bool Exists::equalTo(const Formula & f) const
 {
-	if (f->getType() != BaseFormula::T_FORALL)
+	if (f->getType() != BaseFormula::T_EXISTS)
 	{
 		return false;
 	}
@@ -1060,24 +1066,4 @@ ostream & operator << (ostream & ostr, const Formula & f)
 {
 	f->printFormula(ostr);
 	return ostr;
-}
-
-FunctionSymbol getUniqueConstantSymbol(deque<FunctionSymbol> & d_constants)
-{
-	static unsigned i = 0;
-	FunctionSymbol unique_constant = "uc" + to_string(i);
-
-	deque<FunctionSymbol>::const_iterator b = d_constants.cbegin();
-	deque<FunctionSymbol>::const_iterator e = d_constants.cend();
-
-	for (; b != e; ++b)
-	{
-		if (*b == unique_constant)
-		{
-			++i;
-			unique_constant = "uc" + to_string(i);
-		}
-	}
-
-	return unique_constant;
 }
