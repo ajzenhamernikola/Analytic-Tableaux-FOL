@@ -21,10 +21,10 @@ void BaseSignedFormula::printSignedFormula(ostream & ostr) const
 
 BaseSignedFormula::TableauxType BaseSignedFormula::getType() const
 {
-	// We will refer to atoms as alpha-type formulae
+	// We treat atoms as special type of formulae
 	if (_f->getType() == BaseFormula::T_ATOM)
 	{
-		return TT_ALPHA;
+		return TT_ATOM;
 	}
 
 	// Alpha-type formulae are...
@@ -143,34 +143,67 @@ bool Tableaux::prove(deque<SignedFormula>&& d_formulae, deque<FunctionSymbol>&& 
 			{
 				switch (rule->getFormula()->getType())
 				{
-				case BaseFormula::T_ATOM:
-					return atomRules(move(d_formulae), move(d_constants), rule, tabs);
-				case BaseFormula::T_NOT:
-					return notRules(move(d_formulae), move(d_constants), rule, tabs);
-				case BaseFormula::T_AND:
-					return andRules(move(d_formulae), move(d_constants), rule, tabs);
-				case BaseFormula::T_OR:
-					return orRules(move(d_formulae), move(d_constants), rule, tabs);
-				case BaseFormula::T_IMP:
-					return impRules(move(d_formulae), move(d_constants), rule, tabs);
-				default:
-					throw "Not applicable: Unknown formula type for signed formula type ALPHA";
+					case BaseFormula::T_NOT:
+						return notRules(move(d_formulae), move(d_constants), rule, tabs);
+					case BaseFormula::T_AND:
+						return andRules(move(d_formulae), move(d_constants), rule, tabs);
+					case BaseFormula::T_OR:
+						return orRules(move(d_formulae), move(d_constants), rule, tabs);
+					case BaseFormula::T_IMP:
+						return impRules(move(d_formulae), move(d_constants), rule, tabs);
+					default:
+						throw "Not applicable: Unknown formula type for signed formula type ALPHA/BETA";
 				}
 			}
 			else if (tType == BaseSignedFormula::TT_DELTA)
 			{
-				// TODO: finish this part of algorithm
+				switch (rule->getFormula()->getType())
+				{
+					case BaseFormula::T_FORALL:
+					{
+						if (rule->getSign() == false)
+						{
+							return forallRules(move(d_formulae), move(d_constants), rule, tabs);
+						} 
+						else
+						{
+							throw "Not applicable: Unknown sign for signed formula type DELTA";
+						}
+					}
+					case BaseFormula::T_EXISTS:
+					{
+						if (rule->getSign() == true)
+						{
+							return existsRules(move(d_formulae), move(d_constants), rule, tabs);
+						} 
+						else
+						{
+							throw "Not applicable: Unknown sign for signed formula type DELTA";
+						}
+					}
+					default:
+						throw "Not applicable: Unknown formula type for signed formula type DELTA";
+				}
+			}
+			else if (tType == BaseSignedFormula::TT_ATOM)
+			{
+				return atomRules(move(d_formulae), move(d_constants), rule, tabs);
 			}
 
 			throw "Not applicable: unknown type of signed formula";
 		}
-		else if (checkIfShouldBranchBeOpenForGammaRule(d_formulae))
-		{
-			// TODO: finish this part of algorithm
-		}
 		else
 		{
-			// TODO: finish this part of algorithm
+			bool isOpenedBranch = checkIfShouldBranchBeOpenForGammaRule(d_formulae);
+			if (isOpenedBranch)
+			{
+				// mark the branch as open 
+				return false;
+			}
+			else 
+			{
+				return prove(move(d_formulae), move(d_constants), tabs);
+			}
 		}
 	}
 	else
@@ -224,10 +257,65 @@ bool Tableaux::checkIfExistsNonGammaRule(deque<SignedFormula>& d_formulae, Signe
 	return false;
 }
 
-bool Tableaux::checkIfShouldBranchBeOpenForGammaRule(deque<SignedFormula>& d_formulae) const
+bool Tableaux::checkIfShouldBranchBeOpenForGammaRule(deque<SignedFormula>& d_formulae, deque<FunctionSymbol> & d_constants) const
 {
-	// TODO: finish this part of algorithm
-	return false;
+	deque<SignedFormula> d_gammaFormulae, d_nextFormulaeNode;
+	deque<SignedFormula>::const_iterator iterFormulae = d_formulae.cbegin();
+	
+	for (; iterFormulae != d_formulae.cend(); ++iterFormulae)
+	{
+		// Extract all gamma formulae
+		if ((*iterFormulae)->getType() == BaseSignedFormula::TT_GAMMA)
+		{
+			d_gammaFormulae.push_back(*iterFormulae);
+		}
+		
+		// Start filling the next node queue 
+		d_nextFormulaeNode.push_back(*iterFormulae);
+	}
+		
+	// Complete filling the next node deque by instantiating gamma formulae
+	iterFormulae != d_gammaFormulae.cbegin();
+	for (; iterFormulae != d_gammaFormulae.cend(); ++iterFormulae)
+	{
+		deque<FunctionSymbol>::const_iterator iterConstants = d_constants.cbegin();
+		for (; iterConstants != d_constants.cend(); ++iterConstants)
+		{
+			Variable v;
+			BaseFormula::Type fType = (*iterFormulae)->getFormula()->getType();
+			Quantifier * pQuantFormula = (Quantifier *)((*iterFormulae)->getFormula().get());
+			v = pQuantFormula->getVariable();
+			
+			Formula instFormula = (*iterFormulae)->getFormula()->instantiate(v, *iterConstants);
+			SignedFormula instSignedFormula = make_shared<BaseSignedFormula>(instFormula, (*iterFormulae)->getSign());
+			
+			deque<SignedFormula>::const_iterator iterFindFormulaeInner = find(d_nextFormulaeNode.cbegin(), d_nextFormulaeNode.cend(), instSignedFormula);
+			if (iterFindFormulaeInner == d_nextFormulaeNode.cend())
+			{
+				d_nextFormulaeNode.push_back(instSignedFormula);
+			}
+		}
+	}
+	
+	// Check if the next node deque is the same as current node deque 
+	if (d_formulae.size() != d_nextFormulaeNode.size())
+	{
+		d_formulae = move(d_nextFormulaeNode);
+		return false;
+	}
+	
+	iterFormulae = d_formulae.cbegin();
+	for (; iterFormulae != d_formulae.cend(); ++iterFormulae)
+	{
+		deque<SignedFormula>::const_iterator iterFindFormulae = find(d_nextFormulaeNode.cbegin(), d_nextFormulaeNode.cend(), *iterFormulae);
+		if (iterFindFormulae == d_nextFormulaeNode.cend())
+		{
+			d_formulae = move(d_nextFormulaeNode);
+			return false;
+		}
+	}
+	
+	return true;
 }
 
 bool Tableaux::atomRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const
@@ -243,7 +331,7 @@ bool Tableaux::atomRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbo
 
 bool Tableaux::notRules(deque<SignedFormula>&& d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const
 {
-	Not * pRule = (Not *)f.get();
+	Not * pRule = (Not *)f->getFormula().get();
 	d_formulae.push_back(make_shared<BaseSignedFormula>(pRule->getOperand(), !f->getSign()));
 
 	deque<SignedFormula>::const_iterator iter = find(d_formulae.cbegin(), d_formulae.cend(), f);
@@ -427,6 +515,18 @@ bool Tableaux::impRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol
 		d_formulae.push_back(make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand2(), false));
 		return prove(move(d_formulae), move(d_constants), tabs);
 	}
+}
+
+bool forallRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const
+{
+	// TODO: implement method
+	return false;
+}
+
+bool existsRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const
+{
+	// TODO: implement method
+	return false;
 }
 
 // END Tableaux

@@ -18,7 +18,7 @@ private:
 	bool _sign;
 public:
 	enum TableauxType {
-		TT_ALPHA, TT_BETA, TT_GAMMA, TT_DELTA
+		TT_ALPHA, TT_BETA, TT_GAMMA, TT_DELTA, TT_ATOM
 	};
 
 	BaseSignedFormula(const Formula & f, bool sign)
@@ -44,13 +44,15 @@ private:
 	
 	bool checkIfExistsComplementaryPairOfLiterals(deque<SignedFormula> & d_formulae) const;
 	bool checkIfExistsNonGammaRule(deque<SignedFormula> & d_formulae, SignedFormula & rule, BaseSignedFormula::TableauxType & ruleType) const;
-	bool checkIfShouldBranchBeOpenForGammaRule(deque<SignedFormula> & d_formulae) const;
+	bool checkIfShouldBranchBeOpenForGammaRule(deque<SignedFormula> & d_formulae, deque<FunctionSymbol> & d_constants) const;
 
 	bool atomRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const;
 	bool notRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const;
 	bool andRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const;
 	bool orRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const;
 	bool impRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const;
+	bool forallRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const;
+	bool existsRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const;
 public:
 	Tableaux(const Formula & root);
 
