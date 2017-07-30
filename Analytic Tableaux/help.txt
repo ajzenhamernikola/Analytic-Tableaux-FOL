@@ -1,39 +1,37 @@
-PROPOSITIONAL CALCULUS SYNTAX
-=============================
+FIRST-ORDER LOGIC SYNTAX
+========================
 
-1) <symbol> is any identifier (as in programming language C) which starts with 
-small letter.
+1) <symbol> is any identifier which starts with a lowercase letter.
+2) <var> is any identifier which starts with an uppercase letter.
+3) <term> is:
+   3a) <var>				-- a variable
+   3b) <symbol>				-- constant
+   3c) <symbol>(<term_seq>)	-- function
 
-2) <atomic_formula> is:
-    2a) true        -- keyword which represents "T", "1", etc.
-    2b) false       -- keyword which represents "N", "0", etc.
-    2c) <symbol>    -- logic variable
+4) <atomic_formula> is:
+   4a) true					-- keyword for "TRUTH" (a.k.a. "T", 1, etc.)
+   4b) false				-- keyword for "FALSE" (a.k.a. "F", 0, etc.)
+   4c) <symbol>				-- propositional variable
+   4d) <symbol>(<term_seq>)	-- composite proposition
+   4e) <term> = <term>  	-- equality*
+   4f) <term> ~= <term> 	-- disequality*
 
-3) <formula> is:
-    3a) <formula> <=> <formula>	    -- biconditional (if and only if)
-    3b) <formula> => <formula>      -- implication (implies, if...then)
-    3c) <formula> | <formula>       -- disjunction (or)
-    3d) <formula> & <formula>       -- conjunction (and, and then)
-    3e) ~<formula>                  -- negation (not, it is false that)
-    3f) <atomic_formula>            -- atomic formula (true, false or a logic 
-                                       variable (see 2))
-    3g) (<formula>)                 -- parentheses are permitted
+5) <term_seq> is:
+   5a) <term>				
+   5b) <term1>,...,<termN>	-- a sequence of terms delimited by a comma
    
-4) <input> is:
-    <formula>;
+6) <formula> is:
+   6a) <formula> <=> <formula>	-- equivalence
+   6b) <formula> => <formula>	-- implication
+   6c) <formula> | <formula>    -- disjunction
+   6d) <formula> & <formula>    -- conjunction
+   6e) ~<formula>  				-- negation
+   6f) ![<var>]:<formula>		-- universal quantifier
+   6g) ?[<var>]:<formula>		-- existential quantifier
+   6h) <atomic_formula>
+   6i) (<formula>)	
+   
+7) INPUT is:
+   <formula>;
 
-Therefore, a symbol ';' is used as a input terminator.
-
-ORDER OF PRECEDENCE
-===================
-
-Binary operators have lower precedence than unary operators. Among the binary
-operators, the order of precedence from the highest to the lowest is: 
-&, |, => and <=>.
-To change the order of precedence one can use the parentheses. They can also be
-used in the cases when they are not necessary. 
-
-ASSOCIATIVITY
-=============
-
-All binary operators are left-associative.
+* NOT SUPPORTED
