@@ -53,6 +53,7 @@ private:
 	bool impRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const;
 	bool forallRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const;
 	bool existsRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const;
+	FunctionSymbol getUniqueConstantSymbol(deque<SignedFormula> & d_formulae = deque<SignedFormula>()) const;
 public:
 	Tableaux(const Formula & root);
 
@@ -64,7 +65,11 @@ public:
 
 ostream & operator << (ostream & ostr, SignedFormula sf);
 
+inline bool operator==(const SignedFormula& lhs, const SignedFormula& rhs);
+
 template<class T>
 ostream & operator << (ostream & ostr, deque<T> & d_T);
+
+bool checkIfAlreadyExistsSuchNode(deque<SignedFormula> & d_nextFormulaeNode);
 
 #endif // _TABLEAUX_H

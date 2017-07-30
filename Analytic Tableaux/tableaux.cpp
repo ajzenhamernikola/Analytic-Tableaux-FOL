@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "tableaux.h"
 
+vector< deque<SignedFormula> > _nodes;
+
 // ----------------------------------------------------------------------------
 // BaseSignedFormula
 
@@ -185,10 +187,6 @@ bool Tableaux::prove(deque<SignedFormula>&& d_formulae, deque<FunctionSymbol>&& 
 						throw "Not applicable: Unknown formula type for signed formula type DELTA";
 				}
 			}
-			else if (tType == BaseSignedFormula::TT_ATOM)
-			{
-				return atomRules(move(d_formulae), move(d_constants), rule, tabs);
-			}
 
 			throw "Not applicable: unknown type of signed formula";
 		}
@@ -198,6 +196,7 @@ bool Tableaux::prove(deque<SignedFormula>&& d_formulae, deque<FunctionSymbol>&& 
 			if (isOpenedBranch)
 			{
 				// mark the branch as open 
+				cout << string(tabs, '\t') << "O" << endl;
 				return false;
 			}
 			else 
@@ -209,8 +208,14 @@ bool Tableaux::prove(deque<SignedFormula>&& d_formulae, deque<FunctionSymbol>&& 
 	else
 	{
 		d_formulae.push_back(_root);
-		_root->getFormula()->getConstants(d_constants);
-		return prove(move(d_formulae), move(d_constants), tabs);
+		deque<FunctionSymbol> d_firstConstants;
+		_root->getFormula()->getConstants(d_firstConstants);
+		if (d_firstConstants.size() == 0)
+		{
+			FunctionSymbol initConstant = getUniqueConstantSymbol();
+			d_firstConstants.push_back(initConstant);
+		}
+		return prove(move(d_formulae), move(d_firstConstants), tabs);
 	}
 }
 
@@ -298,24 +303,22 @@ bool Tableaux::checkIfShouldBranchBeOpenForGammaRule(deque<SignedFormula>& d_for
 	}
 	
 	// Check if the next node deque is the same as current node deque 
-	if (d_formulae.size() != d_nextFormulaeNode.size())
+
+	/*cout << endl << "********** DEBUG ***********" << endl;
+	cout << "FORMULAE: " << d_formulae << endl;
+	cout << "NEXT    : " << d_nextFormulaeNode << endl;
+	cout << "********** DEBUG ***********" << endl << endl;*/
+
+	if (checkIfAlreadyExistsSuchNode(d_nextFormulaeNode))
 	{
-		d_formulae = move(d_nextFormulaeNode);
-		return false;
+		return true;
 	}
-	
-	iterFormulae = d_formulae.cbegin();
-	for (; iterFormulae != d_formulae.cend(); ++iterFormulae)
-	{
-		deque<SignedFormula>::const_iterator iterFindFormulae = find(d_nextFormulaeNode.cbegin(), d_nextFormulaeNode.cend(), *iterFormulae);
-		if (iterFindFormulae == d_nextFormulaeNode.cend())
-		{
-			d_formulae = move(d_nextFormulaeNode);
-			return false;
-		}
-	}
-	
-	return true;
+
+	deque<SignedFormula> d_copyFormulae(d_nextFormulaeNode);
+	_nodes.push_back(d_copyFormulae);
+
+	d_formulae = move(d_nextFormulaeNode);
+	return false;
 }
 
 bool Tableaux::atomRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const
@@ -332,12 +335,17 @@ bool Tableaux::atomRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbo
 bool Tableaux::notRules(deque<SignedFormula>&& d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const
 {
 	Not * pRule = (Not *)f->getFormula().get();
-	d_formulae.push_back(make_shared<BaseSignedFormula>(pRule->getOperand(), !f->getSign()));
-
+	SignedFormula sfOp = make_shared<BaseSignedFormula>(pRule->getOperand(), !f->getSign());
+	
 	deque<SignedFormula>::const_iterator iter = find(d_formulae.cbegin(), d_formulae.cend(), f);
 	if (iter != d_formulae.cend())
 	{
 		d_formulae.erase(iter);
+	}
+	iter = find(d_formulae.cbegin(), d_formulae.cend(), sfOp);
+	if (iter == d_formulae.cend())
+	{
+		d_formulae.push_back(sfOp);
 	}
 
 	return prove(move(d_formulae), move(d_constants), tabs);
@@ -353,8 +361,21 @@ bool Tableaux::andRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol
 		{
 			d_formulae.erase(iter);
 		}
-		d_formulae.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand1(), true));
-		d_formulae.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand2(), true));
+
+		SignedFormula sfOp1 = make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand1(), true);
+		SignedFormula sfOp2 = make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand2(), true);
+
+		iter = find(d_formulae.cbegin(), d_formulae.cend(), sfOp1);
+		if (iter == d_formulae.cend())
+		{
+			d_formulae.push_back(sfOp1);
+		}
+		iter = find(d_formulae.cbegin(), d_formulae.cend(), sfOp2);
+		if (iter == d_formulae.cend())
+		{
+			d_formulae.push_back(sfOp2);
+		}
+
 		return prove(move(d_formulae), move(d_constants), tabs);
 	}
 	// If X /\ Y is false, then either X is false or Y is false.
@@ -370,6 +391,7 @@ bool Tableaux::andRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol
 			d_formulae.erase(iter);
 		}
 		d_formulae.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand1(), false));
+		vector<deque<SignedFormula>> tmp_nodes(_nodes);
 		res1 = prove(move(d_formulae), move(d_constants), tabs + 1);
 		cout << string(tabs + 1, '\t') << (res1 ? "X" : "O") << endl;
 
@@ -385,6 +407,7 @@ bool Tableaux::andRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol
 				d_formulae.erase(iter);
 			}
 			d_formulae.push_back(make_shared<BaseSignedFormula>(((And*)f->getFormula().get())->getOperand2(), false));
+			_nodes = tmp_nodes;
 			res2 = prove(move(d_formulae), move(d_constants), tabs + 1);
 			cout << string(tabs + 1, '\t') << (res2 ? "X" : "O") << endl;
 
@@ -416,6 +439,7 @@ bool Tableaux::orRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol>
 			d_formulae.erase(iter);
 		}
 		d_formulae.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand1(), true));
+		vector<deque<SignedFormula>> tmp_nodes(_nodes);
 		res1 = prove(move(d_formulae), move(d_constants), tabs + 1);
 		cout << string(tabs + 1, '\t') << (res1 ? "X" : "O") << endl;
 
@@ -431,6 +455,7 @@ bool Tableaux::orRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol>
 				d_formulae.erase(iter);
 			}
 			d_formulae.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand2(), true));
+			_nodes = tmp_nodes;
 			res2 = prove(move(d_formulae), move(d_constants), tabs + 1);
 			cout << string(tabs + 1, '\t') << (res2 ? "X" : "O") << endl;
 
@@ -453,8 +478,21 @@ bool Tableaux::orRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol>
 		{
 			d_formulae.erase(iter);
 		}
-		d_formulae.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand1(), false));
-		d_formulae.push_back(make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand2(), false));
+
+		SignedFormula sfOp1 = make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand1(), false);
+		SignedFormula sfOp2 = make_shared<BaseSignedFormula>(((Or*)f->getFormula().get())->getOperand2(), false);
+
+		iter = find(d_formulae.cbegin(), d_formulae.cend(), sfOp1);
+		if (iter == d_formulae.cend())
+		{
+			d_formulae.push_back(sfOp1);
+		}
+		iter = find(d_formulae.cbegin(), d_formulae.cend(), sfOp2);
+		if (iter == d_formulae.cend())
+		{
+			d_formulae.push_back(sfOp2);
+		}
+
 		return prove(move(d_formulae), move(d_constants), tabs);
 	}
 }
@@ -474,6 +512,7 @@ bool Tableaux::impRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol
 			d_formulae.erase(iter);
 		}
 		d_formulae.push_back(make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand1(), false));
+		vector<deque<SignedFormula>> tmp_nodes(_nodes);
 		res1 = prove(move(d_formulae), move(d_constants), tabs + 1);
 		cout << string(tabs + 1, '\t') << (res1 ? "X" : "O") << endl;
 
@@ -489,6 +528,7 @@ bool Tableaux::impRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol
 				d_formulae.erase(iter);
 			}
 			d_formulae.push_back(make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand2(), true));
+			_nodes = tmp_nodes;
 			res2 = prove(move(d_formulae), move(d_constants), tabs + 1);
 			cout << string(tabs + 1, '\t') << (res2 ? "X" : "O") << endl;
 
@@ -511,22 +551,101 @@ bool Tableaux::impRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol
 		{
 			d_formulae.erase(iter);
 		}
-		d_formulae.push_back(make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand1(), true));
-		d_formulae.push_back(make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand2(), false));
+
+		SignedFormula sfOp1 = make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand1(), true);
+		SignedFormula sfOp2 = make_shared<BaseSignedFormula>(((Imp*)f->getFormula().get())->getOperand2(), false);
+
+		iter = find(d_formulae.cbegin(), d_formulae.cend(), sfOp1);
+		if (iter == d_formulae.cend())
+		{
+			d_formulae.push_back(sfOp1);
+		}
+		iter = find(d_formulae.cbegin(), d_formulae.cend(), sfOp2);
+		if (iter == d_formulae.cend())
+		{
+			d_formulae.push_back(sfOp2);
+		}
+
 		return prove(move(d_formulae), move(d_constants), tabs);
 	}
 }
 
 bool Tableaux::forallRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const
 {
-	// TODO: implement method
-	return false;
+	// Called only if it's a delta type SignedFormula, but let's check anyway
+	if (!(f->getSign() == false && f->getFormula()->getType() == BaseFormula::T_FORALL))
+	{
+		throw "Method forallRules not applicable!";
+	}
+
+	// Instantiate the formula with a new constant symbol
+	FunctionSymbol newConstant = getUniqueConstantSymbol(d_formulae);
+	Forall * pForall = (Forall *)f->getFormula().get();
+	Formula instFormula = f->getFormula()->instantiate(pForall->getVariable(), make_shared<FunctionTerm>(newConstant));
+
+	// Remove the formula from the deque and add the instantiated formula
+	deque<SignedFormula>::const_iterator iterSignedFormula = find(d_formulae.cbegin(), d_formulae.cend(), f);
+	if (iterSignedFormula != d_formulae.cend())
+	{
+		d_formulae.erase(iterSignedFormula);
+	}
+	d_formulae.push_back(make_shared<BaseSignedFormula>(instFormula, f->getSign()));
+
+	// Add the new constant to the constants deque
+	d_constants.push_back(newConstant);
+
+	return prove(move(d_formulae), move(d_constants), tabs);
 }
 
 bool Tableaux::existsRules(deque<SignedFormula> && d_formulae, deque<FunctionSymbol> && d_constants, const SignedFormula & f, int tabs) const
 {
-	// TODO: implement method
-	return false;
+	// Called only if it's a delta type SignedFormula, but let's check anyway
+	if (!(f->getSign() == true && f->getFormula()->getType() == BaseFormula::T_EXISTS))
+	{
+		throw "Method existsRules not applicable!";
+	}
+
+	// Instantiate the formula with a new constant symbol
+	FunctionSymbol newConstant = getUniqueConstantSymbol(d_formulae);
+	Exists * pExists = (Exists *)f->getFormula().get();
+	Formula instFormula = f->getFormula()->instantiate(pExists->getVariable(), make_shared<FunctionTerm>(newConstant));
+
+	// Remove the formula from the deque and add the instantiated formula
+	deque<SignedFormula>::const_iterator iterSignedFormula = find(d_formulae.cbegin(), d_formulae.cend(), f);
+	if (iterSignedFormula != d_formulae.cend())
+	{
+		d_formulae.erase(iterSignedFormula);
+	}
+	d_formulae.push_back(make_shared<BaseSignedFormula>(instFormula, f->getSign()));
+
+	// Add the new constant to the constants deque
+	d_constants.push_back(newConstant);
+
+	return prove(move(d_formulae), move(d_constants), tabs);
+}
+
+FunctionSymbol Tableaux::getUniqueConstantSymbol(deque<SignedFormula> & d_formulae) const
+{
+	static unsigned i = 0;
+	FunctionSymbol uniqueConstant = "uc" + to_string(i);
+
+	deque<SignedFormula>::const_iterator iterFormulae = d_formulae.cbegin();
+	for (; iterFormulae != d_formulae.cend(); ++iterFormulae)
+	{
+		deque<FunctionSymbol> d_constants;
+		(*iterFormulae)->getFormula()->getConstants(d_constants);
+
+		deque<FunctionSymbol>::const_iterator iterConstants;
+		do
+		{
+			++i;
+			uniqueConstant = "uc" + to_string(i);
+			iterConstants = find(d_constants.cbegin(), d_constants.cend(), uniqueConstant);
+		} while (iterConstants != d_constants.cend());
+
+	}
+
+	return uniqueConstant;
 }
 
 // END Tableaux
@@ -536,6 +655,49 @@ ostream & operator<<(ostream & ostr, SignedFormula sf)
 {
 	sf->printSignedFormula(ostr);
 	return ostr;
+}
+
+inline bool operator==(const SignedFormula& lhs, const SignedFormula& rhs)
+{
+	bool ret = lhs->getSign() == rhs->getSign() &&
+		lhs->getFormula()->equalTo(rhs->getFormula());
+	
+	/*cout << endl << "****************** DEBUG ******************" << endl << "Comparing: " << lhs->getFormula() << " == " << rhs->getFormula() << (ret ? "true" : "false") << endl << "****************** DEBUG ******************" << endl << endl;*/
+	
+	return ret;
+}
+
+bool checkIfAlreadyExistsSuchNode(deque<SignedFormula>& d_nextFormulaeNode)
+{
+	vector<deque<SignedFormula>>::const_iterator iterNodes = _nodes.cbegin();
+	for (; iterNodes != _nodes.cend(); ++iterNodes)
+	{
+		deque<SignedFormula> d_formulae = *iterNodes;
+
+		if (d_formulae.size() != d_nextFormulaeNode.size())
+		{
+			continue;
+		}
+
+		bool isEqual = true;
+		deque<SignedFormula>::const_iterator iterFormulae = d_formulae.cbegin();
+		for (; iterFormulae != d_formulae.cend(); ++iterFormulae)
+		{
+			deque<SignedFormula>::const_iterator iterFindFormulae = find(d_nextFormulaeNode.cbegin(), d_nextFormulaeNode.cend(), *iterFormulae);
+			if (iterFindFormulae == d_nextFormulaeNode.cend())
+			{
+				isEqual = false;
+				break;
+			}
+		}
+
+		if (isEqual)
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 template<class T>
